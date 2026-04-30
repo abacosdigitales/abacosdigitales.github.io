@@ -211,6 +211,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--blanco)}
     <div class="nav-group-label">Gestión</div>
     <a class="nav-item" onclick="showView('clientes',this)"><span class="nav-icon">👤</span>Clientes</a>
     <a class="nav-item admin-only" onclick="showView('tecnicos',this)"><span class="nav-icon">🔧</span>Técnicos</a>
+    <a class="nav-item admin-only" onclick="showView('resenas',this)"><span class="nav-icon">⭐</span>Reseñas</a>
     <a class="nav-item admin-only" onclick="showView('estadisticas',this)"><span class="nav-icon">📈</span>Estadísticas</a>
     <div class="nav-group-label admin-only">Sitios</div>
     <a class="nav-item admin-only" href="https://abacosdigitales.github.io/site.github.io/TECHFIX" target="_blank"><span class="nav-icon">🛠️</span>TechFix Pro</a>
@@ -321,6 +322,22 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--blanco)}
         <button class="btn btn-n" onclick="abrirModalTecnico()">+ Agregar técnico</button>
       </div>
       <div id="tecnicos-lista"></div>
+    </div>
+
+    <!-- RESEÑAS -->
+    <div class="view" id="view-resenas">
+      <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+        <p style="color:var(--gris2);font-size:13px">Reseñas enviadas por clientes. Aprobá las que quieras publicar en el sitio.</p>
+        <div style="display:flex;gap:.5rem">
+          <select class="filter-sel" id="filtro-resena" onchange="renderResenas()">
+            <option value="">Todas</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="aprobada">Aprobadas</option>
+            <option value="rechazada">Rechazadas</option>
+          </select>
+        </div>
+      </div>
+      <div id="resenas-admin-lista"></div>
     </div>
 
     <!-- ESTADÍSTICAS -->
@@ -457,8 +474,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--blanco)}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyDIxusiIA-Zl0inSrL2T-7OwvhAIvIu2bY",authDomain:"techfixpro-4338f.firebaseapp.com",projectId:"techfixpro-4338f",storageBucket:"techfixpro-4338f.firebasestorage.app",messagingSenderId:"31911783369",appId:"1:31911783369:web:72628b1b7ba7055be11618"};
 const app=initializeApp(firebaseConfig);
@@ -487,7 +503,7 @@ async function enviarNotificacion(ot, estadoAnterior){
 }
 
 const EC={Pendiente:'b-pend','En proceso':'b-proc',Listo:'b-list',Entregado:'b-entr',Cancelado:'b-canc'};
-let ordenes=[],solicitudes=[],tecnicos=[],usuario=null,editingId=null,editingTecOtId=null,currentDetId=null;
+let ordenes=[],solicitudes=[],tecnicos=[],resenas=[],usuario=null,editingId=null,editingTecOtId=null,currentDetId=null;
 let unsubOT=null,unsubSol=null,unsubTec=null;
 
 // ===== AUTH =====
@@ -590,11 +606,24 @@ function iniciarListeners(){
       solicitudes.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
       updateBadge();renderSolicitudes();renderDash();
     },err=>toast('Error solicitudes: '+err.message,'err'));
+
+    onSnapshot(collection(db,'resenas'),snap=>{
+      resenas=snap.docs.map(d=>({_id:d.id,...d.data()}));
+      resenas.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+      renderResenas();
+      const pend=resenas.filter(r=>r.estado==='pendiente').length;
+      const navR=document.querySelector('.nav-item[onclick*="resenas"]');
+      if(navR){
+        let badge=navR.querySelector('.badge-notif');
+        if(!badge){badge=document.createElement('span');badge.className='badge-notif';badge.style.marginLeft='auto';navR.appendChild(badge);}
+        badge.textContent=pend||'';badge.style.display=pend?'inline':'none';
+      }
+    });
   }
 }
 
 // ===== NAV =====
-const TITLES={dashboard:'Dashboard',ordenes:'Órdenes de Trabajo',solicitudes:'Solicitudes Web',clientes:'Clientes',tecnicos:'Técnicos',estadisticas:'Estadísticas'};
+const TITLES={dashboard:'Dashboard',ordenes:'Órdenes de Trabajo',solicitudes:'Solicitudes Web',clientes:'Clientes',tecnicos:'Técnicos',resenas:'Reseñas',estadisticas:'Estadísticas'};
 window.showView=function(id,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -602,6 +631,7 @@ window.showView=function(id,el){
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[id]||id;
   if(id==='estadisticas')renderEstadisticas();
+  if(id==='resenas')renderResenas();
 }
 
 // ===== HELPERS =====
@@ -1184,6 +1214,49 @@ window.eliminarTecnico=async function(uid,nombre){
   if(!confirm(`¿Eliminar al técnico ${nombre}? Perderá acceso al panel.`))return;
   await deleteDoc(doc(db,'usuarios',uid));
   toast(`Técnico ${nombre} eliminado`);
+}
+
+// ===== RESEÑAS =====
+function renderResenas(){
+  const filtro=document.getElementById('filtro-resena')?.value||'';
+  const lista=filtro?resenas.filter(r=>r.estado===filtro):resenas;
+  const c=document.getElementById('resenas-admin-lista');
+  if(!c)return;
+  if(!lista.length){
+    c.innerHTML='<div class="empty-state"><div class="es-icon">⭐</div><p>No hay reseñas'+(filtro?' en este estado':'')+'.</p></div>';
+    return;
+  }
+  const ESTADO_BADGE={pendiente:'b-sol',aprobada:'b-entr',rechazada:'b-canc'};
+  c.innerHTML=lista.map(r=>`
+    <div class="sol-card" style="margin-bottom:.75rem">
+      <div style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--turquesa3),var(--turquesa));display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--blanco)">${(r.nombre||'?')[0].toUpperCase()}</div>
+      <div class="sol-info">
+        <div class="sol-title">${r.nombre||'—'} <span style="color:var(--naranja)">${'★'.repeat(r.estrellas||5)}</span></div>
+        <div class="sol-meta">${r.equipo||'Sin equipo'} · ${r.fecha||'—'}</div>
+        <div style="margin-top:.5rem;font-size:13px;color:var(--gris1);line-height:1.5;font-style:italic">"${r.texto||''}"</div>
+        <div style="margin-top:.5rem"><span class="badge ${ESTADO_BADGE[r.estado]||'b-pend'}">${r.estado}</span></div>
+      </div>
+      <div class="sol-actions" style="flex-direction:column;gap:.5rem">
+        ${r.estado!=='aprobada'?`<button class="btn btn-t btn-sm" onclick="aprobarResena('${r._id}')">✓ Aprobar</button>`:''}
+        ${r.estado!=='rechazada'?`<button class="btn btn-danger btn-sm" onclick="rechazarResena('${r._id}')">✕ Rechazar</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="eliminarResena('${r._id}')">Eliminar</button>
+      </div>
+    </div>`).join('');
+}
+window.renderResenas=renderResenas;
+
+window.aprobarResena=async function(fid){
+  await updateDoc(doc(db,'resenas',fid),{estado:'aprobada'});
+  toast('Reseña aprobada y publicada en el sitio');
+}
+window.rechazarResena=async function(fid){
+  await updateDoc(doc(db,'resenas',fid),{estado:'rechazada'});
+  toast('Reseña rechazada');
+}
+window.eliminarResena=async function(fid){
+  if(!confirm('¿Eliminar esta reseña permanentemente?'))return;
+  await deleteDoc(doc(db,'resenas',fid));
+  toast('Reseña eliminada');
 }
 
 // ===== ESTADÍSTICAS =====

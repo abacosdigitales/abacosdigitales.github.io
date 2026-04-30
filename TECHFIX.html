@@ -506,42 +506,60 @@ footer{background:var(--negro3);border-top:1px solid var(--borde);padding:2rem 0
     <p class="section-tag">Lo que dicen nuestros clientes</p>
     <div class="line-accent"></div>
     <h2 class="section-title">Testimonios</h2>
-    <div class="testi-grid fade-in">
-      <div class="testi-card">
-        <div class="testi-quote">"</div>
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">Llevé mi notebook que no encendía y en menos de 48hs me la devolvieron funcionando perfectamente. El diagnóstico fue gratuito y el presupuesto muy razonable.</p>
-        <div class="testi-author">
-          <div class="testi-avatar" style="background:linear-gradient(135deg,var(--turquesa3),var(--turquesa))">A</div>
+    <p class="section-sub">Experiencias reales de clientes que confiaron en nosotros.</p>
+
+    <!-- RESEÑAS DINÁMICAS -->
+    <div class="testi-grid fade-in" id="resenas-container">
+      <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--gris2);font-size:13px" id="resenas-loading">Cargando reseñas...</div>
+    </div>
+
+    <!-- PROMEDIO -->
+    <div id="resenas-promedio" style="display:none;text-align:center;margin-top:1.5rem;padding:1rem;background:var(--negro3);border:1px solid var(--borde);border-radius:8px;max-width:300px;margin-left:auto;margin-right:auto">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:42px;font-weight:700;color:var(--turquesa)" id="promedio-num">0</div>
+      <div style="color:var(--naranja);font-size:20px;margin:.25rem 0" id="promedio-stars">★★★★★</div>
+      <div style="font-size:12px;color:var(--gris2)" id="promedio-total">0 reseñas</div>
+    </div>
+
+    <!-- FORMULARIO DEJAR RESEÑA -->
+    <div style="margin-top:3rem;background:var(--negro3);border:1px solid var(--borde);border-radius:8px;padding:2rem;max-width:600px;margin-left:auto;margin-right:auto">
+      <h3 style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--blanco);margin-bottom:.5rem">¿Ya reparaste tu equipo con nosotros?</h3>
+      <p style="font-size:13px;color:var(--gris2);margin-bottom:1.5rem">Dejanos tu experiencia. Tu reseña aparecerá en el sitio luego de ser revisada.</p>
+
+      <div id="form-resena">
+        <!-- Estrellas interactivas -->
+        <div style="margin-bottom:1.25rem">
+          <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gris2);margin-bottom:.5rem">Calificación *</label>
+          <div id="star-selector" style="display:flex;gap:.25rem;cursor:pointer">
+            <span class="star-btn" data-val="1" style="font-size:28px;color:var(--gris3);transition:color .15s">★</span>
+            <span class="star-btn" data-val="2" style="font-size:28px;color:var(--gris3);transition:color .15s">★</span>
+            <span class="star-btn" data-val="3" style="font-size:28px;color:var(--gris3);transition:color .15s">★</span>
+            <span class="star-btn" data-val="4" style="font-size:28px;color:var(--gris3);transition:color .15s">★</span>
+            <span class="star-btn" data-val="5" style="font-size:28px;color:var(--gris3);transition:color .15s">★</span>
+          </div>
+          <input type="hidden" id="r-estrellas" value="0">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
           <div>
-            <div class="testi-name">Ana García</div>
-            <div class="testi-equipo">Notebook Lenovo IdeaPad</div>
+            <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gris2);margin-bottom:.4rem">Nombre *</label>
+            <input id="r-nombre" type="text" placeholder="Tu nombre" style="width:100%;background:var(--negro4);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:10px 12px;color:var(--blanco);font-family:'Inter',sans-serif;font-size:14px;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gris2);margin-bottom:.4rem">Equipo reparado</label>
+            <input id="r-equipo" type="text" placeholder="Ej: Notebook HP" style="width:100%;background:var(--negro4);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:10px 12px;color:var(--blanco);font-family:'Inter',sans-serif;font-size:14px;outline:none">
           </div>
         </div>
+        <div style="margin-bottom:1.25rem">
+          <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gris2);margin-bottom:.4rem">Tu experiencia *</label>
+          <textarea id="r-texto" placeholder="Contanos cómo fue tu experiencia con nosotros..." style="width:100%;background:var(--negro4);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:10px 12px;color:var(--blanco);font-family:'Inter',sans-serif;font-size:14px;outline:none;resize:vertical;min-height:90px"></textarea>
+        </div>
+        <div id="r-error" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:.625rem 1rem;font-size:13px;color:#ef4444;margin-bottom:1rem"></div>
+        <button onclick="enviarResena()" style="width:100%;background:linear-gradient(90deg,var(--turquesa3),var(--turquesa2));color:var(--blanco);border:none;border-radius:4px;padding:12px;font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all .2s" id="btn-resena">ENVIAR RESEÑA</button>
       </div>
-      <div class="testi-card">
-        <div class="testi-quote">"</div>
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">Excelente atención. Me explicaron todo el proceso paso a paso y recibí notificaciones cuando el equipo estuvo listo. Super recomendable.</p>
-        <div class="testi-author">
-          <div class="testi-avatar" style="background:linear-gradient(135deg,var(--naranja2),var(--naranja))">C</div>
-          <div>
-            <div class="testi-name">Carlos Ruiz</div>
-            <div class="testi-equipo">PC de escritorio</div>
-          </div>
-        </div>
-      </div>
-      <div class="testi-card">
-        <div class="testi-quote">"</div>
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">Recuperaron todos mis archivos de un disco dañado que otros talleres me dijeron que era imposible. Eternamente agradecida. Profesionales de verdad.</p>
-        <div class="testi-author">
-          <div class="testi-avatar" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">M</div>
-          <div>
-            <div class="testi-name">María Sosa</div>
-            <div class="testi-equipo">Recuperación de datos</div>
-          </div>
-        </div>
+
+      <div id="resena-success" style="display:none;text-align:center;padding:1.5rem 0">
+        <div style="font-size:40px;margin-bottom:.75rem">🙌</div>
+        <h4 style="font-family:'Rajdhani',sans-serif;font-size:22px;color:var(--turquesa);margin-bottom:.5rem">¡Gracias por tu reseña!</h4>
+        <p style="font-size:13px;color:var(--gris2)">Será revisada y publicada en breve. ¡Tu opinión nos ayuda a seguir mejorando!</p>
       </div>
     </div>
   </div>
@@ -752,7 +770,7 @@ footer{background:var(--negro3);border-top:1px solid var(--borde);padding:2rem 0
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDIxusiIA-Zl0inSrL2T-7OwvhAIvIu2bY",
@@ -824,6 +842,117 @@ window.enviarSolicitud=async function(){
     console.error(err);
     alert('Hubo un error al enviar la solicitud. Por favor intentá de nuevo.');
     btn.textContent='ENVIAR SOLICITUD';btn.disabled=false;
+  }
+}
+
+// ===== RESEÑAS =====
+const COLORES_AVATAR=['linear-gradient(135deg,#007a74,#00d4c8)','linear-gradient(135deg,#e85a0a,#ff6b1a)','linear-gradient(135deg,#7c3aed,#4f46e5)','linear-gradient(135deg,#065f46,#10b981)','linear-gradient(135deg,#1e40af,#60a5fa)'];
+
+// Cargar reseñas aprobadas en tiempo real
+onSnapshot(collection(db,'resenas'), snap=>{
+  const aprobadas=snap.docs.map(d=>({_id:d.id,...d.data()}))
+    .filter(r=>r.estado==='aprobada')
+    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+
+  const container=document.getElementById('resenas-container');
+  const promedioWrap=document.getElementById('resenas-promedio');
+
+  if(!aprobadas.length){
+    container.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--gris2);font-size:14px">Aún no hay reseñas publicadas. ¡Sé el primero en dejar la tuya!</div>';
+    promedioWrap.style.display='none';
+    return;
+  }
+
+  // Promedio
+  const prom=(aprobadas.reduce((s,r)=>s+(r.estrellas||5),0)/aprobadas.length).toFixed(1);
+  document.getElementById('promedio-num').textContent=prom;
+  document.getElementById('promedio-stars').textContent='★'.repeat(Math.round(prom))+'☆'.repeat(5-Math.round(prom));
+  document.getElementById('promedio-total').textContent=aprobadas.length+' reseña'+(aprobadas.length!==1?'s':'');
+  promedioWrap.style.display='block';
+
+  container.innerHTML=aprobadas.map((r,i)=>{
+    const inicial=(r.nombre||'?')[0].toUpperCase();
+    const color=COLORES_AVATAR[i%COLORES_AVATAR.length];
+    const stars='★'.repeat(r.estrellas||5)+'☆'.repeat(5-(r.estrellas||5));
+    return `<div class="testi-card">
+      <div class="testi-quote">"</div>
+      <div class="testi-stars" style="color:var(--naranja)">${stars}</div>
+      <p class="testi-text">${r.texto||''}</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:${color}">${inicial}</div>
+        <div>
+          <div class="testi-name">${r.nombre||'Cliente'}</div>
+          <div class="testi-equipo">${r.equipo||''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+});
+
+// Estrellas interactivas
+let estrellasSeleccionadas=0;
+document.querySelectorAll('.star-btn').forEach(star=>{
+  star.addEventListener('mouseover',()=>{
+    const val=parseInt(star.dataset.val);
+    document.querySelectorAll('.star-btn').forEach(s=>{
+      s.style.color=parseInt(s.dataset.val)<=val?'var(--naranja)':'var(--gris3)';
+    });
+  });
+  star.addEventListener('mouseout',()=>{
+    document.querySelectorAll('.star-btn').forEach(s=>{
+      s.style.color=parseInt(s.dataset.val)<=estrellasSeleccionadas?'var(--naranja)':'var(--gris3)';
+    });
+  });
+  star.addEventListener('click',()=>{
+    estrellasSeleccionadas=parseInt(star.dataset.val);
+    document.getElementById('r-estrellas').value=estrellasSeleccionadas;
+    document.querySelectorAll('.star-btn').forEach(s=>{
+      s.style.color=parseInt(s.dataset.val)<=estrellasSeleccionadas?'var(--naranja)':'var(--gris3)';
+    });
+  });
+});
+
+window.enviarResena=async function(){
+  const nombre=document.getElementById('r-nombre').value.trim();
+  const texto=document.getElementById('r-texto').value.trim();
+  const equipo=document.getElementById('r-equipo').value.trim();
+  const estrellas=parseInt(document.getElementById('r-estrellas').value)||0;
+  const errEl=document.getElementById('r-error');
+
+  if(!nombre||!texto){errEl.textContent='Por favor completá tu nombre y tu experiencia.';errEl.style.display='block';return}
+  if(!estrellas){errEl.textContent='Por favor seleccioná una calificación.';errEl.style.display='block';return}
+  errEl.style.display='none';
+
+  const btn=document.getElementById('btn-resena');
+  btn.textContent='Enviando...';btn.disabled=true;
+
+  try{
+    await addDoc(collection(db,'resenas'),{
+      nombre,texto,equipo,estrellas,
+      estado:'pendiente',
+      fecha:new Date().toISOString().slice(0,10),
+      creadoEn:serverTimestamp()
+    });
+
+    // Notificar al admin
+    try{
+      await emailjs.send('service_928zkc2','template_aa3u2q1',{
+        cliente_nombre:nombre,
+        cliente_tel:'—',
+        cliente_email:'—',
+        equipo_tipo:'Reseña: '+estrellas+' estrellas',
+        equipo_marca:equipo||'—',
+        urgencia:'Nueva reseña pendiente de aprobación',
+        problema:texto,
+        solicitud_id:'RESENA',
+      });
+    }catch(e){console.warn('Email no enviado:',e);}
+
+    document.getElementById('form-resena').style.display='none';
+    document.getElementById('resena-success').style.display='block';
+  }catch(e){
+    errEl.textContent='Error al enviar. Intentá de nuevo.';errEl.style.display='block';
+    btn.textContent='ENVIAR RESEÑA';btn.disabled=false;
   }
 }
 
