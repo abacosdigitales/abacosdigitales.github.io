@@ -47,11 +47,11 @@ body::before{content:'';position:fixed;inset:0;background-image:repeating-linear
 
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,10,0.95);border-bottom:1px solid var(--borde);backdrop-filter:blur(12px)}
-.nav-inner{max-width:1100px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 2rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:64px}
 .logo{font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;letter-spacing:0.05em}
 .logo span:first-child{color:var(--turquesa)}
 .logo span:last-child{color:var(--naranja)}
-.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links{display:flex;gap:1.5rem;align-items:center;justify-content:center}
 .nav-links a{color:var(--gris2);text-decoration:none;font-size:14px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;transition:color .2s}
 .nav-links a:hover{color:var(--turquesa)}
 .nav-cta{background:var(--naranja);color:var(--blanco);padding:8px 20px;border-radius:4px;font-weight:600;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;transition:background .2s}
@@ -230,7 +230,31 @@ footer{background:var(--negro3);border-top:1px solid var(--borde);padding:2rem 0
   .counter-num{font-size:38px}
 }
 
-.fade-in{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+/* MAPA Y HORARIOS */
+#ubicacion{background:var(--negro2)}
+.ubicacion-layout{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem;align-items:start}
+.mapa-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--borde);height:320px}
+.mapa-wrap iframe{width:100%;height:100%;border:none;filter:invert(90%) hue-rotate(180deg)}
+.horarios-card{background:var(--negro3);border:1px solid var(--borde);border-radius:10px;padding:1.75rem}
+.horarios-card h3{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--blanco);margin-bottom:1.25rem}
+.estado-taller{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:1.25rem}
+.estado-abierto{background:var(--success-dim);color:var(--success)}
+.estado-cerrado{background:var(--danger-dim);color:var(--danger)}
+.estado-dot{width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite}
+.horario-row{display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;border-bottom:1px solid var(--borde2);font-size:13px}
+.horario-row:last-child{border:none}
+.horario-dia{color:var(--gris2);font-weight:500}
+.horario-hora{color:var(--blanco);font-weight:500}
+.horario-row.hoy .horario-dia{color:var(--turquesa);font-weight:600}
+.horario-row.hoy .horario-hora{color:var(--turquesa)}
+.horario-cerrado{color:var(--gris3)!important}
+.direccion-info{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--borde2)}
+.direccion-info p{font-size:13px;color:var(--gris2);margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.direccion-info a{color:var(--turquesa);text-decoration:none;font-size:13px}
+.direccion-info a:hover{color:var(--naranja)}
+@media(max-width:768px){.ubicacion-layout{grid-template-columns:1fr}}
+
+
 .fade-in.visible{opacity:1;transform:translateY(0)}
 
 @media(max-width:700px){
@@ -252,8 +276,9 @@ footer{background:var(--negro3);border-top:1px solid var(--borde);padding:2rem 0
       <a href="#testimonios">Testimonios</a>
       <a href="#faq">FAQ</a>
       <a href="cliente.html">Estado de mi equipo</a>
-      <a href="#solicitud">Solicitar turno</a>
-      <a href="admin.html" class="nav-cta">Panel admin</a>
+    </div>
+    <div style="display:flex;justify-content:flex-end">
+      <a href="#solicitud" class="nav-cta">Solicitar</a>
     </div>
   </div>
 </nav>
@@ -270,20 +295,6 @@ footer{background:var(--negro3);border-top:1px solid var(--borde);padding:2rem 0
     <div class="hero-btns">
       <a href="#solicitud" class="btn-primary">Solicitar servicio</a>
       <a href="#proceso" class="btn-secondary">Ver cómo funciona</a>
-    </div>
-    <div class="hero-stats">
-      <div>
-        <div class="hero-stat-val">500+</div>
-        <div class="hero-stat-label">Equipos reparados</div>
-      </div>
-      <div>
-        <div class="hero-stat-val">48hs</div>
-        <div class="hero-stat-label">Tiempo promedio</div>
-      </div>
-      <div>
-        <div class="hero-stat-val">90d</div>
-        <div class="hero-stat-label">Garantía de servicio</div>
-      </div>
     </div>
   </div>
 </section>
@@ -619,6 +630,31 @@ footer{background:var(--negro3);border-top:1px solid var(--borde);padding:2rem 0
   </div>
 </section>
 
+<!-- UBICACIÓN Y HORARIOS -->
+<section id="ubicacion">
+  <div class="section-inner">
+    <p class="section-tag">Dónde estamos</p>
+    <div class="line-accent"></div>
+    <h2 class="section-title">Ubicación y horarios</h2>
+    <div class="ubicacion-layout fade-in">
+      <div class="mapa-wrap">
+        <iframe src="https://maps.google.com/maps?q=Ernesto+Nelson+57,+Castelar,+Buenos+Aires,+Argentina&output=embed&z=16" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <div class="horarios-card">
+        <h3>Horarios de atención</h3>
+        <div id="estado-taller-badge"></div>
+        <div id="horarios-lista"></div>
+        <div class="direccion-info">
+          <p>📍 Ernesto Nelson 57, Castelar, Buenos Aires</p>
+          <p>📞 <a href="tel:+5491126972862">+54 9 11 2697-2862</a></p>
+          <p>💬 <a href="https://wa.me/5491126972862" target="_blank">Escribinos por WhatsApp</a></p>
+          <p>🗺 <a href="https://maps.google.com/?q=Ernesto+Nelson+57,+Castelar,+Buenos+Aires" target="_blank">Ver en Google Maps</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- WHATSAPP FLOTANTE -->
 <div class="wa-float">
   <div class="wa-tooltip">¿Necesitás ayuda?</div>
@@ -874,18 +910,15 @@ onSnapshot(collection(db,'resenas'), snap=>{
     const inicial=(r.nombre||'?')[0].toUpperCase();
     const color=COLORES_AVATAR[i%COLORES_AVATAR.length];
     const stars='★'.repeat(r.estrellas||5)+'☆'.repeat(5-(r.estrellas||5));
-    return `<div class="testi-card">
-      <div class="testi-quote">"</div>
-      <div class="testi-stars" style="color:var(--naranja)">${stars}</div>
-      <p class="testi-text">${r.texto||''}</p>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background:${color}">${inicial}</div>
-        <div>
-          <div class="testi-name">${r.nombre||'Cliente'}</div>
-          <div class="testi-equipo">${r.equipo||''}</div>
-        </div>
-      </div>
-    </div>`;
+    return '<div class="testi-card">'
+      +'<div class="testi-quote">&ldquo;</div>'
+      +'<div class="testi-stars" style="color:var(--naranja)">'+stars+'</div>'
+      +'<p class="testi-text">'+(r.texto||'')+'</p>'
+      +'<div class="testi-author">'
+      +'<div class="testi-avatar" style="background:'+color+'">'+inicial+'</div>'
+      +'<div><div class="testi-name">'+(r.nombre||'Cliente')+'</div>'
+      +'<div class="testi-equipo">'+(r.equipo||'')+'</div></div>'
+      +'</div></div>';
   }).join('');
 });
 
@@ -995,6 +1028,45 @@ document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
 // Cerrar modal con Escape
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarContrato()});
 document.getElementById('modal-contrato').addEventListener('click',e=>{if(e.target.id==='modal-contrato')cerrarContrato()});
+
+// ===== HORARIOS =====
+(function(){
+  var HORARIOS=[
+    {dia:'Lunes',    open:9, close:18},
+    {dia:'Martes',   open:9, close:18},
+    {dia:'Miercoles',open:9, close:18},
+    {dia:'Jueves',   open:9, close:18},
+    {dia:'Viernes',  open:9, close:18},
+    {dia:'Sabado',   open:10,close:13},
+    {dia:'Domingo',  open:null,close:null},
+  ];
+  var arNow=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Argentina/Buenos_Aires'}));
+  var dow=arNow.getDay();
+  var hora=arNow.getHours()+(arNow.getMinutes()/60);
+  var idx=dow===0?6:dow-1;
+  var hoy=HORARIOS[idx];
+  var abierto=hoy.open!==null&&hora>=hoy.open&&hora<hoy.close;
+
+  var badge=document.getElementById('estado-taller-badge');
+  if(badge){
+    badge.innerHTML='<span class="estado-taller '+(abierto?'estado-abierto':'estado-cerrado')+'">'
+      +'<span class="estado-dot" style="background:'+(abierto?'var(--success)':'var(--danger)')+'"></span>'
+      +(abierto?'Abierto ahora':'Cerrado ahora')
+      +'</span>';
+  }
+
+  var lista=document.getElementById('horarios-lista');
+  if(lista){
+    lista.innerHTML=HORARIOS.map(function(h,i){
+      var esHoy=i===idx;
+      var horaStr=h.open!==null?(h.open+':00 - '+h.close+':00 hs'):'Cerrado';
+      return '<div class="horario-row'+(esHoy?' hoy':'')+'">'
+        +'<span class="horario-dia">'+h.dia+(esHoy?' <small style="color:var(--turquesa);font-size:10px">(hoy)</small>':'')+'</span>'
+        +'<span class="horario-hora'+(h.open===null?' horario-cerrado':'')+'">'+ horaStr+'</span>'
+        +'</div>';
+    }).join('');
+  }
+})();
 
 </script>
 </body>
