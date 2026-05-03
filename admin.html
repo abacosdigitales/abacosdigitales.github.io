@@ -411,10 +411,26 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--blanco)}
       <div class="fg"><label>Técnico asignado</label><select id="m-tecnico"><option value="">Sin asignar</option></select></div>
       <div class="fg"><label>Problema reportado *</label><textarea id="m-problema" placeholder="Descripción del problema..."></textarea></div>
       <div class="fg"><label>Diagnóstico / trabajo realizado</label><textarea id="m-diag" placeholder="Diagnóstico técnico..."></textarea></div>
-      <div class="fg-row">
-        <div class="fg"><label>Costo ($)</label><input id="m-costo" type="number" placeholder="0"></div>
-        <div class="fg"><label>Notas internas</label><input id="m-notas" placeholder="Observaciones..."></div>
+
+      <!-- DESGLOSE DE COSTOS - solo admin -->
+      <div style="background:var(--negro4);border:1px solid rgba(0,212,200,0.15);border-radius:6px;padding:1rem;margin-bottom:1rem">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--turquesa);margin-bottom:.875rem">Desglose de costos internos</div>
+        <div class="fg-row">
+          <div class="fg"><label>Mano de obra ($)</label><input id="m-costo-mano" type="number" placeholder="0" oninput="calcularTotal()"></div>
+          <div class="fg"><label>Repuestos / Partes ($)</label><input id="m-costo-partes" type="number" placeholder="0" oninput="calcularTotal()"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Viáticos / Otros ($)</label><input id="m-costo-otros" type="number" placeholder="0" oninput="calcularTotal()"></div>
+          <div class="fg"><label>Costo total interno ($)</label><input id="m-costo-total-interno" type="number" placeholder="0" readonly style="background:var(--negro3);color:var(--gris2);cursor:not-allowed"></div>
+        </div>
+        <div style="height:1px;background:var(--borde2);margin:.5rem 0"></div>
+        <div class="fg-row">
+          <div class="fg"><label style="color:var(--naranja)">Precio al cliente ($)</label><input id="m-costo" type="number" placeholder="0" oninput="calcularRentabilidad()"></div>
+          <div class="fg"><label style="color:var(--success)">Rentabilidad ($)</label><input id="m-rentabilidad" type="number" placeholder="0" readonly style="background:var(--negro3);cursor:not-allowed" id="m-rentabilidad"></div>
+        </div>
       </div>
+
+      <div class="fg"><label>Notas internas</label><input id="m-notas" placeholder="Observaciones..."></div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="cerrar('modal-ot')">Cancelar</button>
@@ -714,11 +730,29 @@ document.getElementById('ot-body').addEventListener('click',function(e){
   else if(action==='actualizar')abrirActTecnico(id);
 });
 
+// ===== CÁLCULO DE COSTOS =====
+window.calcularTotal=function(){
+  const mano=parseFloat(document.getElementById('m-costo-mano').value)||0;
+  const partes=parseFloat(document.getElementById('m-costo-partes').value)||0;
+  const otros=parseFloat(document.getElementById('m-costo-otros').value)||0;
+  const total=mano+partes+otros;
+  document.getElementById('m-costo-total-interno').value=total||'';
+  calcularRentabilidad();
+}
+window.calcularRentabilidad=function(){
+  const interno=parseFloat(document.getElementById('m-costo-total-interno').value)||0;
+  const cliente=parseFloat(document.getElementById('m-costo').value)||0;
+  const rent=cliente-interno;
+  const el=document.getElementById('m-rentabilidad');
+  el.value=rent||'';
+  el.style.color=rent>0?'var(--success)':rent<0?'var(--danger)':'var(--gris2)';
+}
+
 window.abrirNuevaOrden=function(datos){
   editingId=null;
   document.getElementById('m-titulo').textContent='Nueva Orden de Trabajo';
   ['cliente','tel','email','equipo','serie','problema','diag','notas'].forEach(k=>document.getElementById('m-'+k).value='');
-  document.getElementById('m-costo').value='';
+  ['m-costo','m-costo-mano','m-costo-partes','m-costo-otros','m-costo-total-interno','m-rentabilidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('m-estado').value='Pendiente';
   document.getElementById('m-fecha').value=hoy();
   document.getElementById('m-tecnico').value='';
@@ -743,6 +777,12 @@ window.editarOT=function(fid){
   document.getElementById('m-problema').value=o.problema||'';document.getElementById('m-diag').value=o.diag||'';
   document.getElementById('m-costo').value=o.costo||'';document.getElementById('m-estado').value=o.estado||'Pendiente';
   document.getElementById('m-notas').value=o.notas||'';document.getElementById('m-tecnico').value=o.tecnicoId||'';
+  // Costos internos
+  document.getElementById('m-costo-mano').value=o.costoMano||'';
+  document.getElementById('m-costo-partes').value=o.costoPartes||'';
+  document.getElementById('m-costo-otros').value=o.costoOtros||'';
+  document.getElementById('m-costo-total-interno').value=o.costoInterno||'';
+  document.getElementById('m-rentabilidad').value=o.rentabilidad||'';
   cerrar('modal-det');abrirModal('modal-ot');
 }
 
@@ -755,10 +795,17 @@ window.guardarOT=async function(){
   btn.textContent='Guardando...';btn.disabled=true;
   try{
     const tecnicoId=document.getElementById('m-tecnico').value;
+    const costoMano=parseFloat(document.getElementById('m-costo-mano').value)||0;
+    const costoPartes=parseFloat(document.getElementById('m-costo-partes').value)||0;
+    const costoOtros=parseFloat(document.getElementById('m-costo-otros').value)||0;
+    const costoInterno=costoMano+costoPartes+costoOtros;
+    const costo=parseFloat(document.getElementById('m-costo').value)||0;
+    const rentabilidad=costo-costoInterno;
     const datos={cliente,equipo,problema,
       tel:document.getElementById('m-tel').value.trim(),email:document.getElementById('m-email').value.trim(),
       serie:document.getElementById('m-serie').value.trim(),fecha:document.getElementById('m-fecha').value,
-      diag:document.getElementById('m-diag').value.trim(),costo:parseFloat(document.getElementById('m-costo').value)||0,
+      diag:document.getElementById('m-diag').value.trim(),
+      costo,costoMano,costoPartes,costoOtros,costoInterno,rentabilidad,
       estado:document.getElementById('m-estado').value,notas:document.getElementById('m-notas').value.trim(),
       tecnicoId,tecnicoNombre:nomTec(tecnicoId)
     };
@@ -779,11 +826,32 @@ window.verOT=function(fid){
   const o=ordenes.find(x=>x._id===fid);if(!o)return;
   currentDetId=fid;
   document.getElementById('det-titulo').textContent='OT '+fid.slice(-6).toUpperCase();
-  const rows=[['Cliente',o.cliente],['Teléfono',o.tel||'-'],['Email',o.email||'-'],['Equipo',o.equipo],['N° Serie',o.serie||'-'],['Ingreso',fmt(o.fecha)],['Técnico',nomTec(o.tecnicoId)],['Problema',o.problema],['Diagnóstico',o.diag||'—'],['Estado','<span class="badge '+(EC[o.estado]||'b-pend')+'">'+o.estado+'</span>'],['Costo',moneda(o.costo)],['Notas',o.notas||'-']];
+  const esAdmin=usuario.rol==='admin';
+  let rows=[
+    ['Cliente',o.cliente],['Teléfono',o.tel||'-'],['Email',o.email||'-'],
+    ['Equipo',o.equipo],['N° Serie',o.serie||'-'],['Ingreso',fmt(o.fecha)],
+    ['Técnico',nomTec(o.tecnicoId)],['Problema',o.problema],
+    ['Diagnóstico',o.diag||'—'],
+    ['Estado','<span class="badge '+(EC[o.estado]||'b-pend')+'">'+o.estado+'</span>'],
+    ['Precio al cliente',moneda(o.costo)],
+    ['Notas',o.notas||'-']
+  ];
+  if(esAdmin&&(o.costoInterno||o.costoMano||o.costoPartes||o.costoOtros)){
+    rows=rows.concat([
+      ['— Mano de obra',moneda(o.costoMano)],
+      ['— Repuestos / Partes',moneda(o.costoPartes)],
+      ['— Viáticos / Otros',moneda(o.costoOtros)],
+      ['Costo interno total',moneda(o.costoInterno)],
+      ['Rentabilidad','<span style="color:'+(o.rentabilidad>0?'var(--success)':o.rentabilidad<0?'var(--danger)':'var(--gris2)')+'">'+moneda(o.rentabilidad)+'</span>'],
+    ]);
+  }
+  if(!esAdmin&&o.costoMano){
+    rows=rows.concat([['Tu mano de obra',moneda(o.costoMano)]]);
+  }
   document.getElementById('det-body').innerHTML=rows.map(([k,v])=>'<div class="det-row"><span class="det-k">'+k+'</span><span class="det-v">'+v+'</span></div>').join('');
   const eb=document.getElementById('det-edit-btn');
   const pb=document.getElementById('det-print-btn');
-  if(usuario.rol==='admin'){eb.style.display='';eb.onclick=function(){editarOT(fid);};}else{eb.style.display='none';}
+  if(esAdmin){eb.style.display='';eb.onclick=function(){editarOT(fid);};}else{eb.style.display='none';}
   pb.onclick=function(){imprimirOT();};
   abrirModal('modal-det');
 }
@@ -1277,13 +1345,15 @@ window.renderEstadisticas=function(){
   const totalOT=filtradas.length;
   const entregadas=filtradas.filter(o=>o.estado==='Entregado').length;
   const ingresoTotal=filtradas.reduce((s,o)=>s+(parseFloat(o.costo)||0),0);
+  const costoTotal=filtradas.reduce((s,o)=>s+(parseFloat(o.costoInterno)||0),0);
+  const rentabilidadTotal=ingresoTotal-costoTotal;
   const enProceso=filtradas.filter(o=>o.estado==='En proceso'||o.estado==='Pendiente').length;
 
   document.getElementById('est-kpis').innerHTML=`
     <div class="stat-card c-t"><div class="stat-label">OT en período</div><div class="stat-val">${totalOT}</div><div class="stat-sub">${meses===0?'Todo el historial':'Últimos '+meses+' meses'}</div></div>
     <div class="stat-card c-g"><div class="stat-label">Entregadas</div><div class="stat-val">${entregadas}</div><div class="stat-sub">${totalOT?Math.round(entregadas/totalOT*100):0}% del total</div></div>
-    <div class="stat-card c-n"><div class="stat-label">Ingresos totales</div><div class="stat-val" style="font-size:26px">$${ingresoTotal.toLocaleString('es-AR')}</div><div class="stat-sub">En reparaciones</div></div>
-    <div class="stat-card c-w"><div class="stat-label">En curso</div><div class="stat-val">${enProceso}</div><div class="stat-sub">Pendientes + En proceso</div></div>
+    <div class="stat-card c-n"><div class="stat-label">Ingresos brutos</div><div class="stat-val" style="font-size:22px">$${ingresoTotal.toLocaleString('es-AR')}</div><div class="stat-sub">Precio cobrado al cliente</div></div>
+    <div class="stat-card" style="border-left:3px solid ${rentabilidadTotal>=0?'var(--success)':'var(--danger)'}"><div class="stat-label">Rentabilidad neta</div><div class="stat-val" style="font-size:22px;color:${rentabilidadTotal>=0?'var(--success)':'var(--danger)'}">$${rentabilidadTotal.toLocaleString('es-AR')}</div><div class="stat-sub">Ingresos menos costos internos</div></div>
   `;
 
   // Preparar meses para gráficos
@@ -1351,10 +1421,11 @@ window.renderEstadisticas=function(){
   filtradas.forEach(o=>{
     if(!o.tecnicoId)return;
     const nom=o.tecnicoNombre||nomTec(o.tecnicoId)||o.tecnicoId;
-    if(!rankMap[nom])rankMap[nom]={total:0,entregadas:0,ingresos:0};
+    if(!rankMap[nom])rankMap[nom]={total:0,entregadas:0,ingresos:0,mano:0};
     rankMap[nom].total++;
     if(o.estado==='Entregado')rankMap[nom].entregadas++;
     rankMap[nom].ingresos+=(parseFloat(o.costo)||0);
+    rankMap[nom].mano+=(parseFloat(o.costoMano)||0);
   });
   const ranking=Object.entries(rankMap).sort((a,b)=>b[1].total-a[1].total);
   const rankEl=document.getElementById('ranking-tecnicos');
@@ -1366,7 +1437,7 @@ window.renderEstadisticas=function(){
         <div style="width:26px;height:26px;border-radius:50%;background:${i===0?'var(--naranja)':i===1?'var(--turquesa3)':'var(--gris3)'};display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;flex-shrink:0">${i+1}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:500;color:var(--blanco);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nom}</div>
-          <div style="font-size:11px;color:var(--gris2)">${d.total} OT · ${d.entregadas} entregadas</div>
+          <div style="font-size:11px;color:var(--gris2)">${d.total} OT · ${d.entregadas} entregadas · Mano de obra: $${d.mano.toLocaleString('es-AR')}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--turquesa)">${d.total}</div>
