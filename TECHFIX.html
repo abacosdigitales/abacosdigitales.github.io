@@ -974,15 +974,16 @@ window.enviarResena=async function(){
 
     // Notificar al admin
     try{
+      const estrellasStr='★'.repeat(estrellas)+'☆'.repeat(5-estrellas);
       await emailjs.send('service_928zkc2','template_aa3u2q1',{
         cliente_nombre:nombre,
         cliente_tel:'—',
         cliente_email:'—',
-        equipo_tipo:'Reseña: '+estrellas+' estrellas',
+        equipo_tipo:estrellasStr+' Nueva resena pendiente',
         equipo_marca:equipo||'—',
-        urgencia:'Nueva reseña pendiente de aprobación',
+        urgencia:'Pendiente de aprobacion en el panel admin',
         problema:texto,
-        solicitud_id:'RESENA',
+        solicitud_id:'RESENA — Aprobar en: https://abacosdigitales.github.io/site.github.io/TECHFIX/admin.html',
       });
     }catch(e){console.warn('Email no enviado:',e);}
 
