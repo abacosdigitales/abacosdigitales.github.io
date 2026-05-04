@@ -650,9 +650,9 @@ function filterProducts() {
   if (list.length === 0) {
     grid.innerHTML = '';
     if (products.length === 0) {
-      empty.innerHTML = `<div class="empty-icon">📦</div><div class="empty-title">EL CATÁLOGO ESTÁ VACÍO</div><div class="empty-sub">Todavía no hay productos cargados. Hacé clic para agregar tu primer producto.</div><button class="btn-add-product" onclick="openModal()">+ AGREGAR PRIMER PRODUCTO</button>`;
+      empty.innerHTML = '<div class="empty-icon">📦</div><div class="empty-title">EL CATÁLOGO ESTÁ VACÍO</div><div class="empty-sub">Todavía no hay productos cargados.</div>' + (isAdmin ? '<button class="btn-add-product" onclick="openModal()">+ AGREGAR PRIMER PRODUCTO</button>' : '');
     } else {
-      empty.innerHTML = `<div class="empty-icon">🔍</div><div class="empty-title">SIN RESULTADOS</div><div class="empty-sub">No encontramos productos con esos filtros. Probá con otros criterios.</div>`;
+      empty.innerHTML = '<div class="empty-icon">🔍</div><div class="empty-title">SIN RESULTADOS</div><div class="empty-sub">No encontramos productos con esos filtros. Probá con otros criterios.</div>';
     }
     empty.style.display = 'flex';
   } else {
@@ -847,6 +847,7 @@ async function checkAdminLogin() {
     document.getElementById('adminBtn').style.borderColor = 'rgba(245,196,0,0.4)';
     document.getElementById('btn-nuevo-prod').style.display = '';
     showToast('✔ SESIÓN ADMIN INICIADA');
+    showHome();
     filterProducts();
   } else {
     document.getElementById('admin-error').style.display = 'block';
