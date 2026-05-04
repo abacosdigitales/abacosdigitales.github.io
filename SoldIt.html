@@ -420,6 +420,13 @@ const WA_NUMBER = '5491126972862'; // Tu número de WhatsApp
 const catEmoji = { smartphone:'📱', laptop:'💻', gaming:'🎮', audio:'🎧', accesorio:'⌨️', tablet:'📟' };
 
 /* ── PERSISTENCIA localStorage ── */
+let products   = [];
+let cart       = [];
+let currentCat = 'all';
+let nextId     = 1;
+let editingId  = null;
+let deletingId = null;
+
 function saveToStorage() {
   try {
     localStorage.setItem('soldit_products', JSON.stringify(products));
@@ -434,13 +441,6 @@ function loadFromStorage() {
     if (n) nextId = parseInt(n);
   } catch(e) {}
 }
-
-let products   = [];
-let cart       = [];
-let currentCat = 'all';
-let nextId     = 1;
-let editingId  = null;
-let deletingId = null;
 
 loadFromStorage();
 
