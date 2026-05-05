@@ -826,8 +826,8 @@ window.guardarOT=async function(){
             cliente_email:datos.email,
             equipo:datos.equipo,
             estado:'Presupuesto listo para aprobacion',
-            diagnostico:datos.diag+'\n\nAPROBAR REPARACION: '+linkAprobar+'\n\nRECHAZAR PRESUPUESTO: '+linkRechazar,
-            costo:Number(datos.costo).toLocaleString('es-AR'),
+            diagnostico:datos.diag,
+            costo:'$'+Number(datos.costo).toLocaleString('es-AR'),
             link_aprobar:linkAprobar,
             link_rechazar:linkRechazar,
           });
