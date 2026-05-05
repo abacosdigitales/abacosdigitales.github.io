@@ -217,9 +217,13 @@ body::before {
 }
 
 /* ── ADMIN MODE ── */
-.admin-controls { display: none; }
-body.admin-mode .admin-controls { display: contents; }
-.btn-nuevo-prod { display: none; }
+
+.card-actions-admin { grid-template-columns:1fr 1fr; gap:6px; padding:4px 12px 10px; }
+.card-actions-admin .btn-eliminar { grid-column:1/-1; }
+
+.admin-controls { display: none !important; }
+body.admin-mode .admin-controls { display: grid !important; }
+.btn-nuevo-prod { display: none !important; }
 body.admin-mode .btn-nuevo-prod { display: inline-flex !important; }
 
 /* FAB candado flotante */
@@ -864,7 +868,7 @@ function renderProducts(list) {
       <div class="card-actions">
         ${!p.sold ? `<button class="btn-carrito" onclick="addToCart(${p.id})">+ CARRITO</button>` : ''}
       </div>
-      <div class="card-actions admin-controls">
+      <div class="card-actions-admin admin-controls">
         <button class="btn-editar" onclick="openModal(${p.id})">✏ EDITAR</button>
         ${!p.sold
           ? `<button class="btn-vendido" onclick="marcarVendido(${p.id})">✔ VENDIDO</button>`
