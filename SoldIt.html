@@ -116,8 +116,8 @@ body::before {
 .btn-add-product:hover { background:var(--amarillo2); }
 
 /* MODAL */
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.80); z-index:200; align-items:center; justify-content:center; }
-.modal-overlay.open { display:flex; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.80); z-index:200; align-items:center; justify-content:center; pointer-events:none; }
+.modal-overlay.open { display:flex; pointer-events:all; }
 .modal { background:var(--negro2); border:1px solid var(--borde-a); border-radius:8px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
 .modal-title { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; letter-spacing:0.06em; margin-bottom:20px; }
 .modal-title span { color:var(--amarillo); }
@@ -405,7 +405,7 @@ body::before {
 <div class="toast" id="toast"></div>
 
 <!-- MODAL LOGIN ADMIN -->
-<div class="modal-overlay" id="adminLoginOverlay" onclick="if(event.target===this)closeAdminLogin()" style="pointer-events:none;">
+<div class="modal-overlay" id="adminLoginOverlay" onclick="if(event.target===this)closeAdminLogin()">
   <div class="modal" style="max-width:360px;">
     <div class="modal-title">🔐 ACCESO <span>ADMIN</span></div>
     <div class="form-field">
@@ -833,7 +833,6 @@ function handleAdminBtn() {
     logoutAdmin();
   } else {
     const overlay = document.getElementById('adminLoginOverlay');
-    overlay.style.pointerEvents = 'all';
     overlay.classList.add('open');
     setTimeout(() => document.getElementById('admin-pwd').focus(), 100);
   }
@@ -870,7 +869,6 @@ function logoutAdmin() {
 function closeAdminLogin() {
   const overlay = document.getElementById('adminLoginOverlay');
   overlay.classList.remove('open');
-  overlay.style.pointerEvents = 'none';
   document.getElementById('admin-pwd').value = '';
   document.getElementById('admin-error').style.display = 'none';
 }
