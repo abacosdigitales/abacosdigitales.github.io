@@ -871,9 +871,6 @@ function closeAdminLogin() {
   document.getElementById('admin-error').style.display = 'none';
 }
 
-filterProducts();
-checkUrlParam();
-
 /* ── CLOUDINARY UPLOAD WIDGET ── */
 let cloudinaryWidget = null;
 function openCloudinaryWidget() {
@@ -929,6 +926,11 @@ function resetUploadArea() {
   document.getElementById('upload-area').style.borderColor = 'rgba(46,127,255,0.35)';
   cloudinaryWidget = null;
 }
+
+/* ── INIT ── */
+filterProducts();
+checkUrlParam();
+document.getElementById('btn-nuevo-prod').style.display = 'none';
 </script>
 </body>
 </html>
