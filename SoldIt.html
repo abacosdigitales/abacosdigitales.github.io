@@ -226,6 +226,7 @@ body::before {
         <button>BUSCAR</button>
       </div>
       <button class="cart-btn" onclick="showCart()">▤ CARRITO <span class="cart-badge" id="cartBadge">0</span></button>
+      <button id="adminBtn" onclick="handleAdminBtn()" style="background:transparent;border:1px solid rgba(245,196,0,0.2);color:var(--gris3);border-radius:4px;padding:7px 12px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;white-space:nowrap;">🔒 ADMIN</button>
     </div>
     <div class="cats-bar">
       <div class="cat-pill active" onclick="filterCat('all',this)">◈ TODOS</div>
@@ -273,7 +274,7 @@ body::before {
         <option value="500000-9999999">MÁS DE $500.000</option>
       </select>
       <div class="results-count" id="resultsCount"></div>
-      <button class="btn-nuevo-prod" onclick="openModal()">+ NUEVO PRODUCTO</button>
+      <button class="btn-nuevo-prod" id="btn-nuevo-prod" onclick="openModal()" style="display:none">+ NUEVO PRODUCTO</button>
     </div>
     <div class="products-grid" id="productsGrid"></div>
     <div id="emptyState" class="empty-state" style="display:none;"></div>
@@ -402,6 +403,22 @@ body::before {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- MODAL LOGIN ADMIN -->
+<div class="modal-overlay" id="adminLoginOverlay" onclick="if(event.target===this)closeAdminLogin()">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title">🔐 ACCESO <span>ADMIN</span></div>
+    <div class="form-field">
+      <label>Contraseña</label>
+      <input type="password" id="admin-pwd" placeholder="Ingresá tu contraseña" onkeydown="if(event.key==='Enter')checkAdminLogin()" />
+    </div>
+    <div id="admin-error" style="display:none;font-size:12px;color:var(--rojo);letter-spacing:.05em;margin-bottom:10px;">⚠ CONTRASEÑA INCORRECTA</div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAdminLogin()">CANCELAR</button>
+      <button class="btn-save" onclick="checkAdminLogin()">INGRESAR</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─── CONFIGURACIÓN ───────────────────────────────────────
@@ -694,9 +711,9 @@ function renderProducts(list) {
       '<div class="card-actions-top">' + waBtn + '</div>' +
       '<div class="card-actions">' +
         carritoBtn +
-        '<button class="btn-editar" onclick="openModal(' + p.id + ')">✏ EDITAR</button>' +
-        '<button class="' + vendidoBtnClass + '" onclick="toggleSold(' + p.id + ')">' + vendidoBtnLabel + '</button>' +
-        '<button class="btn-eliminar" onclick="askDelete(' + p.id + ')" style="grid-column:1/-1">🗑 ELIMINAR</button>' +
+        (isAdmin ? '<button class="btn-editar" onclick="openModal(' + p.id + ')">✏ EDITAR</button>' : '') +
+        (isAdmin ? '<button class="' + vendidoBtnClass + '" onclick="toggleSold(' + p.id + ')">' + vendidoBtnLabel + '</button>' : '') +
+        (isAdmin ? '<button class="btn-eliminar" onclick="askDelete(' + p.id + ')" style="grid-column:1/-1">🗑 ELIMINAR</button>' : '') +
         '<button class="btn-editar" onclick="shareProduct(' + p.id + ')" style="grid-column:1/-1">🔗 COMPARTIR LINK</button>' +
       '</div>' +
     '</div>';
@@ -805,6 +822,60 @@ function changeQty(id, d) {
 function removeFromCart(id) {
   cart = cart.filter(x => x.id!==id);
   updateCartBadge(); renderCart();
+}
+
+
+/* ── ADMIN AUTH ── */
+const ADMIN_HASH = 'a0590ed596932bd78ae3705222a3022c5226d9878f322a043fdcc2ed2ffb1c98';
+let isAdmin = false;
+
+async function hashString(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function handleAdminBtn() {
+  if (isAdmin) {
+    logoutAdmin();
+  } else {
+    document.getElementById('adminLoginOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('admin-pwd').focus(), 100);
+  }
+}
+
+async function checkAdminLogin() {
+  const pwd = document.getElementById('admin-pwd').value;
+  const hash = await hashString(pwd);
+  if (hash === ADMIN_HASH) {
+    isAdmin = true;
+    closeAdminLogin();
+    document.getElementById('adminBtn').textContent = '🔓 ADMIN';
+    document.getElementById('adminBtn').style.color = 'var(--amarillo)';
+    document.getElementById('adminBtn').style.borderColor = 'rgba(245,196,0,0.4)';
+    document.getElementById('btn-nuevo-prod').style.display = '';
+    showToast('✔ SESIÓN ADMIN INICIADA');
+    filterProducts();
+  } else {
+    document.getElementById('admin-error').style.display = 'block';
+    document.getElementById('admin-pwd').value = '';
+    document.getElementById('admin-pwd').focus();
+  }
+}
+
+function logoutAdmin() {
+  isAdmin = false;
+  document.getElementById('adminBtn').textContent = '🔒 ADMIN';
+  document.getElementById('adminBtn').style.color = 'var(--gris3)';
+  document.getElementById('adminBtn').style.borderColor = 'rgba(245,196,0,0.2)';
+  document.getElementById('btn-nuevo-prod').style.display = 'none';
+  showToast('SESIÓN ADMIN CERRADA');
+  filterProducts();
+}
+
+function closeAdminLogin() {
+  document.getElementById('adminLoginOverlay').classList.remove('open');
+  document.getElementById('admin-pwd').value = '';
+  document.getElementById('admin-error').style.display = 'none';
 }
 
 filterProducts();
