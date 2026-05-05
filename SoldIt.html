@@ -826,13 +826,7 @@ function removeFromCart(id) {
 
 
 /* ── ADMIN AUTH ── */
-const ADMIN_HASH = 'a0590ed596932bd78ae3705222a3022c5226d9878f322a043fdcc2ed2ffb1c98';
 let isAdmin = false;
-
-async function hashString(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
 
 function handleAdminBtn() {
   if (isAdmin) {
@@ -843,10 +837,9 @@ function handleAdminBtn() {
   }
 }
 
-async function checkAdminLogin() {
+function checkAdminLogin() {
   const pwd = document.getElementById('admin-pwd').value;
-  const hash = await hashString(pwd);
-  if (hash === ADMIN_HASH) {
+  if (pwd === 'alma3737') {
     isAdmin = true;
     closeAdminLogin();
     document.getElementById('adminBtn').textContent = '🔓 ADMIN';
