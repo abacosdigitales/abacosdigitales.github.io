@@ -594,8 +594,8 @@ function loadData() {
 
 /* ── URLs COMPARTIBLES ── */
 function getProductUrl(id) {
-  const base = window.location.href.split('?')[0].split('#')[0];
-  return base + '?producto=' + id;
+  // Simple anchor-based URL for sharing
+  return window.location.href.split('?')[0].split('#')[0] + '#producto-' + id;
 }
 function updateMetaTags(p) {
   const title = p ? `${p.name} — $${p.price.toLocaleString('es-AR')} | Sold-It TechMarket` : 'Sold-It TechMarket — Tecnología nueva y usada';
@@ -606,23 +606,23 @@ function updateMetaTags(p) {
   document.getElementById('og-title').content  = title;
   document.getElementById('og-desc').content   = desc;
   document.getElementById('og-image').content  = img;
-  document.getElementById('og-url').content    = url;
+  // og-url update removed
   document.getElementById('tw-title').content  = title;
   document.getElementById('tw-desc').content   = desc;
   document.getElementById('tw-image').content  = img;
 }
 function checkUrlProduct() {
-  const params = new URLSearchParams(window.location.search);
-  const id = parseInt(params.get('producto'));
-  if (id && products.find(x => x.id===id)) showDetail(id);
+  // URL-based product loading disabled (not compatible with static hosting)
+  // Products are loaded from localStorage
 }
 function compartirProducto(id) {
-  const url = getProductUrl(id);
+  const p = products.find(x=>x.id===id);
+  const url = window.location.href.split('?')[0].split('#')[0];
+  const text = `Mirá este producto en Sold-It TechMarket: *${p.name}* — $${p.price.toLocaleString('es-AR')}`;
   if (navigator.share) {
-    const p = products.find(x=>x.id===id);
-    navigator.share({ title: p.name, text: `Mirá este producto en Sold-It TechMarket: ${p.name}`, url });
+    navigator.share({ title: p.name, text, url });
   } else {
-    navigator.clipboard.writeText(url).then(() => showToast('🔗 LINK COPIADO AL PORTAPAPELES'));
+    navigator.clipboard.writeText(text + '\n' + url).then(() => showToast('🔗 LINK COPIADO AL PORTAPAPELES'));
   }
 }
 
@@ -900,9 +900,7 @@ function showDetail(id) {
   document.getElementById('cartView').style.display   = 'none';
   document.getElementById('detailView').style.display = 'block';
   const hb = document.getElementById('heroBanner'); if(hb) hb.style.display='none';
-  // Update URL without reload
-  const newUrl = getProductUrl(id);
-  window.history.pushState({productId: id}, '', newUrl);
+  // Update meta tags only (no URL manipulation - breaks on GitHub Pages)
   updateMetaTags(p);
   const imgHtml = p.imagen
     ? `<img src="${p.imagen}" alt="${p.name}" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.style.display='none';this.nextSibling.style.display='block'"><span style="display:none;font-size:100px">${p.emoji}</span>`
@@ -942,7 +940,6 @@ function showHome() {
   document.getElementById('detailView').style.display = 'none';
   document.getElementById('cartView').style.display   = 'none';
   const hb3 = document.getElementById('heroBanner'); if(hb3) hb3.style.display='';
-  window.history.pushState({}, '', window.location.pathname);
   updateMetaTags(null);
 }
 
