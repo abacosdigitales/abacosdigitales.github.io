@@ -813,9 +813,10 @@ window.guardarOT=async function(){
       const otAnterior=ordenes.find(o=>o._id===editingId);
       const estadoAnterior=otAnterior?otAnterior.estado:null;
       await updateDoc(doc(db,'ordenes',editingId),{...datos,actualizadoEn:serverTimestamp()});
-      await enviarNotificacion(datos, estadoAnterior);
-      // Enviar email de presupuesto si tiene precio, email y está Pendiente
-      if(datos.estado==='Pendiente'&&datos.costo>0&&datos.email&&datos.diag){
+
+      // Si hay presupuesto listo para aprobar, mandar ese email en lugar del de cambio de estado
+      const esPresupuesto=datos.estado==='Pendiente'&&datos.costo>0&&datos.email&&datos.diag;
+      if(esPresupuesto){
         const otId=editingId.slice(-6).toUpperCase();
         const baseUrl='https://abacosdigitales.github.io/site.github.io/cliente.html';
         const linkAprobar=baseUrl+'?ot='+otId+'&accion=aprobar';
@@ -833,6 +834,9 @@ window.guardarOT=async function(){
           });
           toast('Email de presupuesto enviado al cliente');
         }catch(emailErr){console.warn('Email presupuesto no enviado:',emailErr);}
+      } else {
+        // Solo mandar notificación de cambio de estado en otros casos
+        await enviarNotificacion(datos, estadoAnterior);
       }
     } else {
       await addDoc(collection(db,'ordenes'),{...datos,creadoEn:serverTimestamp()});
