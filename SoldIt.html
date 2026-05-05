@@ -787,10 +787,24 @@ function filterCat(cat, el) {
   filterProducts();
 }
 function filterProducts() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const cond   = document.getElementById('condFilter').value;
-  const sort   = document.getElementById('sortFilter').value;
-  const pr     = document.getElementById('priceFilter').value;
+  // Guard: if grid doesn't exist, don't run
+  const grid  = document.getElementById('productsGrid');
+  const empty = document.getElementById('emptyState');
+  if (!grid || !empty) return;
+
+  const searchEl = document.getElementById('searchInput');
+  const condEl   = document.getElementById('condFilter');
+  const sortEl   = document.getElementById('sortFilter');
+  const prEl     = document.getElementById('priceFilter');
+
+  // Guard: if filters don't exist, don't run
+  if (!searchEl || !condEl || !sortEl || !prEl) return;
+
+  const search = searchEl.value.toLowerCase();
+  const cond   = condEl.value;
+  const sort   = sortEl.value;
+  const pr     = prEl.value;
+
   let list = products.filter(p => {
     const mCat  = currentCat === 'all' || p.cat === currentCat;
     const mSrch = p.name.toLowerCase().includes(search) || p.seller.toLowerCase().includes(search);
@@ -799,23 +813,22 @@ function filterProducts() {
     if (pr !== 'all') { const [mn,mx] = pr.split('-').map(Number); mPrice = p.price>=mn && p.price<=mx; }
     return mCat && mSrch && mCond && mPrice;
   });
+
   if (sort === 'price-asc')  list.sort((a,b) => a.price-b.price);
   if (sort === 'price-desc') list.sort((a,b) => b.price-a.price);
   if (sort === 'rating')     list.sort((a,b) => (b.rating||0)-(a.rating||0));
 
   const rc = document.getElementById('resultsCount');
-  rc.textContent = list.length ? list.length+' RESULTADO'+(list.length!==1?'S':'') : '';
+  if (rc) rc.textContent = list.length ? list.length+' RESULTADO'+(list.length!==1?'S':'') : '';
 
-  const grid  = document.getElementById('productsGrid');
   // Update hero stat
   const statEl = document.getElementById('statProducts');
   if (statEl) statEl.textContent = products.filter(p => !p.sold).length;
-  const empty = document.getElementById('emptyState');
 
   if (list.length === 0) {
     grid.innerHTML = '';
     if (products.length === 0) {
-      empty.innerHTML = `<div class="empty-icon">📦</div><div class="empty-title">EL CATÁLOGO ESTÁ VACÍO</div><div class="empty-sub">Todavía no hay productos cargados. Hacé clic para agregar tu primer producto.</div><button class="btn-add-product" onclick="openModal()">+ AGREGAR PRIMER PRODUCTO</button>`;
+      empty.innerHTML = `<div class="empty-icon">📦</div><div class="empty-title">EL CATÁLOGO ESTÁ VACÍO</div><div class="empty-sub">Todavía no hay productos cargados. Hacé clic en el candado para ingresar como admin y agregar tu primer producto.</div>`;
     } else {
       empty.innerHTML = `<div class="empty-icon">🔍</div><div class="empty-title">SIN RESULTADOS</div><div class="empty-sub">No encontramos productos con esos filtros. Probá con otros criterios.</div>`;
     }
@@ -1003,7 +1016,12 @@ function applyAdminUI() {
     fab.classList.remove('active');
     fab.title = 'Panel administrador';
   }
-  filterProducts();
+  // Re-render cards so admin buttons show/hide correctly
+  // but only if homeView is visible
+  const homeView = document.getElementById('homeView');
+  if (homeView && homeView.style.display !== 'none') {
+    filterProducts();
+  }
 }
 
 function toggleAdminPanel() {
