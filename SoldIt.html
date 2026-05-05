@@ -405,7 +405,7 @@ body::before {
 <div class="toast" id="toast"></div>
 
 <!-- MODAL LOGIN ADMIN -->
-<div class="modal-overlay" id="adminLoginOverlay" onclick="if(event.target===this)closeAdminLogin()">
+<div class="modal-overlay" id="adminLoginOverlay" onclick="if(event.target===this)closeAdminLogin()" style="pointer-events:none;">
   <div class="modal" style="max-width:360px;">
     <div class="modal-title">🔐 ACCESO <span>ADMIN</span></div>
     <div class="form-field">
@@ -832,7 +832,9 @@ function handleAdminBtn() {
   if (isAdmin) {
     logoutAdmin();
   } else {
-    document.getElementById('adminLoginOverlay').classList.add('open');
+    const overlay = document.getElementById('adminLoginOverlay');
+    overlay.style.pointerEvents = 'all';
+    overlay.classList.add('open');
     setTimeout(() => document.getElementById('admin-pwd').focus(), 100);
   }
 }
@@ -866,7 +868,9 @@ function logoutAdmin() {
 }
 
 function closeAdminLogin() {
-  document.getElementById('adminLoginOverlay').classList.remove('open');
+  const overlay = document.getElementById('adminLoginOverlay');
+  overlay.classList.remove('open');
+  overlay.style.pointerEvents = 'none';
   document.getElementById('admin-pwd').value = '';
   document.getElementById('admin-error').style.display = 'none';
 }
