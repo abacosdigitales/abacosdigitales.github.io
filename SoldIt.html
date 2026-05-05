@@ -856,41 +856,179 @@ function imgContent(p) {
 }
 
 function renderProducts(list) {
-  document.getElementById('productsGrid').innerHTML = list.map(p => `
-    <div class="product-card" style="${p.sold ? 'opacity:0.65' : ''}">
-      <div class="product-img" onclick="${p.sold ? '' : `showDetail(${p.id})`}" style="${p.sold ? 'cursor:default' : ''}">
-        ${imgContent(p)}
-        ${p.sold ? '<div class="badge-sold"><span>VENDIDO</span></div>' : `<span class="${p.cond==='new'?'badge-new':'badge-used'}">${p.cond==='new'?'NUEVO':'USADO'}</span>`}
-        ${!p.sold && p.origPrice ? '<span class="badge-offer">OFERTA</span>' : ''}
-        ${!p.sold && p.stock !== undefined && p.stock <= 3 && p.stock > 0 ? '<span class="badge-stock-low">ÚLTIMAS UNIDADES</span>' : ''}
-      </div>
-      <div class="product-info">
-        <div class="product-name" onclick="${p.sold ? '' : `showDetail(${p.id})`}" style="${p.sold ? 'cursor:default;color:var(--gris3)' : ''}">${p.name}</div>
-        <div class="product-seller">por ${p.seller}</div>
-        <div style="font-size:11px;color:var(--gris3);">Sin reseñas aún</div>
-        ${p.origPrice ? `<div class="product-price-orig">$${p.origPrice.toLocaleString('es-AR')}</div>` : ''}
-        <div class="product-price" style="${p.sold ? 'color:var(--gris3)' : ''}"><span class="currency">$</span>${p.price.toLocaleString('es-AR')}</div>
-        ${p.cuotas ? `<div class="product-cuotas">${p.cuotas} cuotas sin interés</div>` : ''}
-        <div class="product-shipping">${p.shipping ? '▲ Envío gratis' : '◎ Envío a acordar'}</div>
-        ${stockLabel(p)}
-      </div>
-      <div class="card-actions-top">
-        ${!p.sold ? `<button class="btn-wa" onclick="consultarWA(${p.id})">${waIcon} CONSULTAR POR WHATSAPP</button>` : ''}
-        <button class="btn-compartir" onclick="compartirProducto(${p.id})">🔗 COMPARTIR</button>
-      </div>
-      <div class="card-actions">
-        ${!p.sold ? `<button class="btn-carrito" onclick="addToCart(${p.id})">+ CARRITO</button>` : ''}
-      </div>
-      <div class="card-actions-admin admin-controls">
-        <button class="btn-editar" onclick="openModal(${p.id})">✏ EDITAR</button>
-        ${!p.sold
-          ? `<button class="btn-vendido" onclick="marcarVendido(${p.id})">✔ VENDIDO</button>`
-          : `<button class="btn-restaurar" onclick="restaurarProducto(${p.id})">↩ RESTAURAR</button>`
-        }
-        <button class="btn-eliminar" onclick="askDelete(${p.id})">🗑 ELIMINAR</button>
-      </div>
-    </div>
-  `).join('');
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML = '';
+
+  list.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    if (p.sold) card.style.opacity = '0.65';
+
+    // IMAGE AREA
+    const imgDiv = document.createElement('div');
+    imgDiv.className = 'product-img';
+    if (!p.sold) imgDiv.onclick = () => showDetail(p.id);
+    else imgDiv.style.cursor = 'default';
+
+    if (p.imagen) {
+      const img = document.createElement('img');
+      img.src = p.imagen;
+      img.alt = p.name;
+      img.onerror = function() { this.style.display='none'; fallback.style.display='flex'; };
+      const fallback = document.createElement('span');
+      fallback.textContent = p.emoji;
+      fallback.style.cssText = 'display:none;font-size:56px';
+      imgDiv.appendChild(img);
+      imgDiv.appendChild(fallback);
+    } else {
+      const emo = document.createElement('span');
+      emo.textContent = p.emoji;
+      emo.style.fontSize = '56px';
+      imgDiv.appendChild(emo);
+    }
+
+    if (p.sold) {
+      const soldBadge = document.createElement('div');
+      soldBadge.className = 'badge-sold';
+      soldBadge.innerHTML = '<span>VENDIDO</span>';
+      imgDiv.appendChild(soldBadge);
+    } else {
+      const condBadge = document.createElement('span');
+      condBadge.className = p.cond === 'new' ? 'badge-new' : 'badge-used';
+      condBadge.textContent = p.cond === 'new' ? 'NUEVO' : 'USADO';
+      imgDiv.appendChild(condBadge);
+      if (p.origPrice) {
+        const ofBadge = document.createElement('span');
+        ofBadge.className = 'badge-offer';
+        ofBadge.textContent = 'OFERTA';
+        imgDiv.appendChild(ofBadge);
+      }
+      if (p.stock !== undefined && p.stock <= 3 && p.stock > 0) {
+        const stBadge = document.createElement('span');
+        stBadge.className = 'badge-stock-low';
+        stBadge.textContent = 'ÚLTIMAS UNIDADES';
+        imgDiv.appendChild(stBadge);
+      }
+    }
+    card.appendChild(imgDiv);
+
+    // INFO AREA
+    const info = document.createElement('div');
+    info.className = 'product-info';
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'product-name';
+    nameDiv.textContent = p.name;
+    if (!p.sold) { nameDiv.onclick = () => showDetail(p.id); }
+    else { nameDiv.style.cssText = 'cursor:default;color:var(--gris3)'; }
+    info.appendChild(nameDiv);
+
+    const sellerDiv = document.createElement('div');
+    sellerDiv.className = 'product-seller';
+    sellerDiv.textContent = 'por ' + p.seller;
+    info.appendChild(sellerDiv);
+
+    const revDiv = document.createElement('div');
+    revDiv.style.cssText = 'font-size:11px;color:var(--gris3)';
+    revDiv.textContent = 'Sin reseñas aún';
+    info.appendChild(revDiv);
+
+    if (p.origPrice) {
+      const origDiv = document.createElement('div');
+      origDiv.className = 'product-price-orig';
+      origDiv.textContent = '$' + p.origPrice.toLocaleString('es-AR');
+      info.appendChild(origDiv);
+    }
+
+    const priceDiv = document.createElement('div');
+    priceDiv.className = 'product-price';
+    if (p.sold) priceDiv.style.color = 'var(--gris3)';
+    priceDiv.innerHTML = '<span class="currency">$</span>' + p.price.toLocaleString('es-AR');
+    info.appendChild(priceDiv);
+
+    if (p.cuotas) {
+      const cuotasDiv = document.createElement('div');
+      cuotasDiv.className = 'product-cuotas';
+      cuotasDiv.textContent = p.cuotas + ' cuotas sin interés';
+      info.appendChild(cuotasDiv);
+    }
+
+    const shipDiv = document.createElement('div');
+    shipDiv.className = 'product-shipping';
+    shipDiv.textContent = p.shipping ? '▲ Envío gratis' : '◎ Envío a acordar';
+    info.appendChild(shipDiv);
+
+    // Stock label
+    if (!p.sold && p.stock !== undefined && p.stock !== null) {
+      const stDiv = document.createElement('div');
+      stDiv.className = 'stock-indicator' + (p.stock <= 3 ? ' low' : '');
+      if (p.stock === 0) stDiv.textContent = 'Sin stock';
+      else if (p.stock <= 3) stDiv.textContent = '⚠ Último' + (p.stock > 1 ? 's ' : ' ') + p.stock + ' disponible' + (p.stock > 1 ? 's' : '');
+      else stDiv.textContent = 'Stock: ' + p.stock;
+      info.appendChild(stDiv);
+    }
+    card.appendChild(info);
+
+    // TOP ACTIONS (WA + Compartir)
+    const topActions = document.createElement('div');
+    topActions.className = 'card-actions-top';
+    if (!p.sold) {
+      const waBtn = document.createElement('button');
+      waBtn.className = 'btn-wa';
+      waBtn.innerHTML = waIcon + ' CONSULTAR POR WHATSAPP';
+      waBtn.onclick = () => consultarWA(p.id);
+      topActions.appendChild(waBtn);
+    }
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-compartir';
+    shareBtn.textContent = '🔗 COMPARTIR';
+    shareBtn.onclick = () => compartirProducto(p.id);
+    topActions.appendChild(shareBtn);
+    card.appendChild(topActions);
+
+    // CARRITO (visitors)
+    const cartActions = document.createElement('div');
+    cartActions.className = 'card-actions';
+    if (!p.sold) {
+      const cartBtn = document.createElement('button');
+      cartBtn.className = 'btn-carrito';
+      cartBtn.textContent = '+ CARRITO';
+      cartBtn.onclick = () => addToCart(p.id);
+      cartActions.appendChild(cartBtn);
+    }
+    card.appendChild(cartActions);
+
+    // ADMIN ACTIONS
+    const adminActions = document.createElement('div');
+    adminActions.className = 'card-actions-admin admin-controls';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-editar';
+    editBtn.textContent = '✏ EDITAR';
+    editBtn.onclick = () => openModal(p.id);
+    adminActions.appendChild(editBtn);
+
+    const soldBtn = document.createElement('button');
+    if (!p.sold) {
+      soldBtn.className = 'btn-vendido';
+      soldBtn.textContent = '✔ VENDIDO';
+      soldBtn.onclick = () => marcarVendido(p.id);
+    } else {
+      soldBtn.className = 'btn-restaurar';
+      soldBtn.textContent = '↩ RESTAURAR';
+      soldBtn.onclick = () => restaurarProducto(p.id);
+    }
+    adminActions.appendChild(soldBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-eliminar';
+    delBtn.textContent = '🗑 ELIMINAR';
+    delBtn.onclick = () => askDelete(p.id);
+    adminActions.appendChild(delBtn);
+
+    card.appendChild(adminActions);
+    grid.appendChild(card);
+  });
 }
 
 /* ── DETAIL ── */
