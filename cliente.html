@@ -109,7 +109,25 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem 
 .live-dot::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* NUEVA BUSQUEDA */
+/* APROBACIÓN */
+.aprobacion-box{margin:1.25rem 1.75rem;background:var(--negro3);border:1px solid var(--borde);border-radius:8px;padding:1.5rem}
+.aprobacion-box h4{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--blanco);margin-bottom:.5rem}
+.aprobacion-box p{font-size:13px;color:var(--gris2);margin-bottom:1.25rem;line-height:1.6}
+.aprobacion-precio{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--naranja);margin-bottom:1.25rem}
+.aprobacion-precio span{font-size:14px;color:var(--gris2);font-family:'Inter',sans-serif;font-weight:400;display:block;margin-top:.25rem}
+.aprobacion-btns{display:flex;gap:.75rem;flex-wrap:wrap}
+.btn-aprobar{flex:1;background:var(--success);color:var(--blanco);border:none;border-radius:6px;padding:12px;font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .2s}
+.btn-aprobar:hover{background:#16a34a;transform:translateY(-1px)}
+.btn-rechazar{flex:1;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:6px;padding:12px;font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:all .2s}
+.btn-rechazar:hover{background:var(--danger-dim)}
+.aprobacion-ok{text-align:center;padding:1.5rem;background:var(--success-dim);border:1px solid rgba(34,197,94,.3);border-radius:8px;margin:1.25rem 1.75rem}
+.aprobacion-ok h4{font-family:'Rajdhani',sans-serif;font-size:22px;color:var(--success);margin-bottom:.5rem}
+.aprobacion-ok p{font-size:13px;color:var(--gris2)}
+.aprobacion-rechazada{text-align:center;padding:1.5rem;background:var(--danger-dim);border:1px solid rgba(239,68,68,.3);border-radius:8px;margin:1.25rem 1.75rem}
+.aprobacion-rechazada h4{font-family:'Rajdhani',sans-serif;font-size:22px;color:var(--danger);margin-bottom:.5rem}
+.aprobacion-rechazada p{font-size:13px;color:var(--gris2)}
+
+
 .btn-nueva{display:block;width:100%;background:transparent;border:1px solid var(--borde2);color:var(--gris2);border-radius:6px;padding:10px;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;margin-top:1rem;text-align:center}
 .btn-nueva:hover{border-color:var(--turquesa3);color:var(--turquesa)}
 
@@ -195,6 +213,8 @@ footer a:hover{color:var(--turquesa)}
         </div>
       </div>
 
+      <div id="aprobacion-wrap"></div>
+
       <div style="padding:1rem 1.75rem">
         <button class="btn-nueva" onclick="nuevaBusqueda()">Consultar otra orden →</button>
       </div>
@@ -209,7 +229,7 @@ footer a:hover{color:var(--turquesa)}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig={
   apiKey:"AIzaSyDIxusiIA-Zl0inSrL2T-7OwvhAIvIu2bY",
@@ -267,7 +287,10 @@ window.buscarOT=function(){
   });
 }
 
+let otActual=null;
+
 function mostrarResultado(ot){
+  otActual=ot;
   const card=document.getElementById('result-card');
   const otNum=(ot._id||'').slice(-6).toUpperCase();
 
@@ -278,41 +301,89 @@ function mostrarResultado(ot){
   document.getElementById('res-fecha-ing').textContent=fmt(ot.fecha);
   document.getElementById('res-problema').textContent=ot.problema||'—';
 
-  // Diagnóstico solo si hay algo
   const diagWrap=document.getElementById('diag-wrap');
-  if(ot.diag){
-    document.getElementById('res-diag').textContent=ot.diag;
-    diagWrap.style.display='block';
-  } else {
-    diagWrap.style.display='none';
-  }
+  if(ot.diag){document.getElementById('res-diag').textContent=ot.diag;diagWrap.style.display='block';}
+  else{diagWrap.style.display='none';}
 
-  // Badge de estado
   const badge=document.getElementById('res-estado-badge');
   badge.className='estado-badge '+(ESTADOS_CLASS[ot.estado]||'b-pend');
   badge.textContent=ot.estado||'—';
 
-  // Progress bar
   const pb=document.getElementById('progress-bar');
-  const esCancelado=ot.estado==='Cancelado';
-  if(esCancelado){
-    pb.innerHTML='<div style="text-align:center;padding:.5rem;color:var(--danger);font-size:13px;width:100%">✕ Orden cancelada</div>';
+  if(ot.estado==='Cancelado'){
+    pb.innerHTML='<div style="text-align:center;padding:.5rem;color:var(--danger);font-size:13px;width:100%">Orden cancelada</div>';
   } else {
     const currentIdx=ESTADOS.indexOf(ot.estado);
     pb.innerHTML=ESTADOS.map((e,i)=>{
       let cls='progress-step';
       if(i<currentIdx)cls+=' done';
       else if(i===currentIdx)cls+=' current';
-      return '<div class="'+cls+'">'
-        +'<div class="step-dot">'+ESTADOS_ICON[e]+'</div>'
-        +'<div class="step-name">'+e+'</div>'
-        +'</div>';
+      return '<div class="'+cls+'"><div class="step-dot">'+ESTADOS_ICON[e]+'</div><div class="step-name">'+e+'</div></div>';
     }).join('');
+  }
+
+  // Sección de aprobación si está Pendiente con presupuesto
+  const apWrap=document.getElementById('aprobacion-wrap');
+  if(ot.estado==='Pendiente'&&ot.costo>0){
+    apWrap.innerHTML='<div class="aprobacion-box">'
+      +'<h4>Presupuesto listo</h4>'
+      +'<p>Revisá el diagnóstico y el presupuesto. Necesitamos tu confirmación para continuar con la reparación.</p>'
+      +'<div class="aprobacion-precio">$'+Number(ot.costo).toLocaleString('es-AR')+'<span>Precio total de la reparación</span></div>'
+      +'<div class="aprobacion-btns">'
+      +'<button class="btn-aprobar" onclick="aprobarOT()">Aprobar reparacion</button>'
+      +'<button class="btn-rechazar" onclick="rechazarOT()">Rechazar presupuesto</button>'
+      +'</div></div>';
+  } else if(ot.estado==='Cancelado'){
+    apWrap.innerHTML='<div class="aprobacion-rechazada"><h4>Presupuesto rechazado</h4><p>Rechazaste el presupuesto. Podés pasar a retirar tu equipo. Se aplicará el costo de diagnóstico.</p></div>';
+  } else {
+    apWrap.innerHTML='';
   }
 
   card.classList.add('show');
   card.scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+window.aprobarOT=async function(){
+  if(!otActual)return;
+  const btn=document.querySelector('.btn-aprobar');
+  if(btn){btn.textContent='Procesando...';btn.disabled=true;}
+  try{
+    await updateDoc(doc(db,'ordenes',otActual._id),{estado:'En proceso'});
+    document.getElementById('aprobacion-wrap').innerHTML=
+      '<div class="aprobacion-ok"><h4>Reparacion aprobada!</h4><p>Comenzaremos a trabajar en tu equipo. Te notificaremos cuando este listo.</p></div>';
+  }catch(e){if(btn){btn.textContent='Aprobar reparacion';btn.disabled=false;}alert('Error al procesar. Intenta de nuevo.');}
+}
+
+window.rechazarOT=async function(){
+  if(!otActual)return;
+  if(!confirm('Estas seguro que queres rechazar el presupuesto?'))return;
+  const btn=document.querySelector('.btn-rechazar');
+  if(btn){btn.textContent='Procesando...';btn.disabled=true;}
+  try{
+    await updateDoc(doc(db,'ordenes',otActual._id),{estado:'Cancelado'});
+    document.getElementById('aprobacion-wrap').innerHTML=
+      '<div class="aprobacion-rechazada"><h4>Presupuesto rechazado</h4><p>Recibimos tu respuesta. Podes pasar a retirar tu equipo. Se aplicara el costo de diagnostico.</p></div>';
+  }catch(e){if(btn){btn.textContent='Rechazar presupuesto';btn.disabled=false;}alert('Error al procesar. Intenta de nuevo.');}
+}
+
+// Manejar aprobacion/rechazo por URL (desde link del email)
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  const otParam=params.get('ot');
+  const accion=params.get('accion');
+  if(otParam&&accion){
+    document.getElementById('input-ot').value=otParam;
+    window.buscarOT();
+    const timer=setInterval(()=>{
+      if(otActual){
+        clearInterval(timer);
+        if(accion==='aprobar')window.aprobarOT();
+        else if(accion==='rechazar')window.rechazarOT();
+      }
+    },500);
+    setTimeout(()=>clearInterval(timer),10000);
+  }
+})();
 
 window.nuevaBusqueda=function(){
   if(unsubOT){unsubOT();unsubOT=null;}

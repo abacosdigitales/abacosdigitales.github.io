@@ -814,6 +814,26 @@ window.guardarOT=async function(){
       const estadoAnterior=otAnterior?otAnterior.estado:null;
       await updateDoc(doc(db,'ordenes',editingId),{...datos,actualizadoEn:serverTimestamp()});
       await enviarNotificacion(datos, estadoAnterior);
+      // Enviar email de presupuesto si tiene precio, email y está Pendiente
+      if(datos.estado==='Pendiente'&&datos.costo>0&&datos.email&&datos.diag){
+        const otId=editingId.slice(-6).toUpperCase();
+        const baseUrl='https://abacosdigitales.github.io/site.github.io/cliente.html';
+        const linkAprobar=baseUrl+'?ot='+otId+'&accion=aprobar';
+        const linkRechazar=baseUrl+'?ot='+otId+'&accion=rechazar';
+        try{
+          await emailjs.send('service_928zkc2','template_1av53iv',{
+            cliente_nombre:datos.cliente,
+            cliente_email:datos.email,
+            equipo:datos.equipo,
+            estado:'Presupuesto listo para aprobacion',
+            diagnostico:datos.diag+'\n\nAPROBAR REPARACION: '+linkAprobar+'\n\nRECHAZAR PRESUPUESTO: '+linkRechazar,
+            costo:Number(datos.costo).toLocaleString('es-AR'),
+            link_aprobar:linkAprobar,
+            link_rechazar:linkRechazar,
+          });
+          toast('Email de presupuesto enviado al cliente');
+        }catch(emailErr){console.warn('Email presupuesto no enviado:',emailErr);}
+      }
     } else {
       await addDoc(collection(db,'ordenes'),{...datos,creadoEn:serverTimestamp()});
     }
