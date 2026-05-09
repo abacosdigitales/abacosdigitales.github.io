@@ -335,9 +335,11 @@
   .tb-led-compaq { background:#F0A830; box-shadow:0 0 4px #F0A830; }
   .tb-led-hollow { background:var(--accent); box-shadow:0 0 6px var(--accent); }
   @media(max-width:768px){
-    .trinidad-banner { grid-template-columns:1fr; margin:0 1.5rem; padding:2rem; }
-    .trinidad-banner-right { align-items:flex-start; }
+    .trinidad-banner { grid-template-columns:1fr; margin:0 1rem; padding:1.5rem; gap:1rem; }
+    .trinidad-banner-right { display:none; }
     .trinidad-banner-pcs { display:none; }
+    .trinidad-banner-title { font-size:1.3rem; }
+    .trinidad-banner-desc { font-size:0.82rem; -webkit-line-clamp:3; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
   }
 
   .techfix-banner {
@@ -381,8 +383,12 @@
   .tf-stat-n { font-family:var(--serif); font-size:1.5rem; color:#00d4c8; display:block; }
   .tf-stat-l { font-size:0.65rem; color:#555555; text-transform:uppercase; letter-spacing:0.06em; }
   @media(max-width:768px){
-    .techfix-banner { grid-template-columns:auto 1fr; margin:0 1.5rem; padding:2rem; gap:1.25rem; }
+    .techfix-banner { grid-template-columns:auto 1fr; margin:0 1rem; padding:1.25rem; gap:1rem; }
+    .techfix-logo { width:60px; height:60px; }
     .techfix-right { display:none; }
+    .techfix-title { font-size:1rem; }
+    .techfix-desc { font-size:0.78rem; margin-bottom:0.75rem; }
+    .techfix-pill { font-size:0.65rem; padding:0.2rem 0.6rem; }
   }
 
   .soldit-banner {
@@ -426,8 +432,12 @@
   .si-stat-n { font-family:var(--serif); font-size:1.5rem; color:#EAB308; display:block; }
   .si-stat-l { font-size:0.65rem; color:#555555; text-transform:uppercase; letter-spacing:0.06em; }
   @media(max-width:768px){
-    .soldit-banner { grid-template-columns:auto 1fr; margin:1.25rem 1.5rem 0; padding:2rem; gap:1.25rem; }
+    .soldit-banner { grid-template-columns:auto 1fr; margin:1rem 1rem 0; padding:1.25rem; gap:1rem; }
+    .soldit-logo { width:60px; height:60px; }
     .soldit-right { display:none; }
+    .soldit-title { font-size:1rem; }
+    .soldit-desc { font-size:0.78rem; margin-bottom:0.75rem; }
+    .soldit-pill { font-size:0.65rem; padding:0.2rem 0.6rem; }
   }
 </style>
 </head>
