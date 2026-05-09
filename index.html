@@ -166,8 +166,28 @@
   .btn-send { font-family: var(--sans); font-size: 0.875rem; font-weight: 500; padding: 0.85rem; background: #25D366; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: opacity 0.2s; }
   .btn-send:hover { opacity: 0.85; }
 
-  footer { padding: 2rem 4rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); max-width: 1200px; margin: 0 auto; }
-  footer span.acc { color: var(--accent); }
+  footer { padding: 2.5rem 4rem; border-top: 1px solid var(--border); max-width: 1200px; margin: 0 auto; }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .footer-brand { display: flex; flex-direction: column; gap: 0.4rem; }
+  .footer-logo-text { font-size: 1.1rem; font-weight: 700; color: var(--fg); }
+  .footer-logo-text span { color: var(--accent); }
+  .footer-tagline { font-size: 0.78rem; color: var(--muted); font-weight: 300; }
+  .footer-links { display: flex; gap: 2rem; list-style: none; }
+  .footer-links a { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--fg); }
+  .footer-socials { display: flex; gap: 0.75rem; }
+  .footer-social { width: 34px; height: 34px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; text-decoration: none; transition: all 0.2s; }
+  .footer-social:hover { border-color: var(--accent); background: var(--accent-dim); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 1.25rem; border-top: 1px solid var(--border); font-size: 0.72rem; color: var(--muted); }
+  .footer-copy span { color: var(--accent); }
+  .footer-badges { display: flex; gap: 0.5rem; }
+  .footer-badge { font-size: 0.65rem; font-weight: 500; padding: 0.2rem 0.65rem; border-radius: 100px; border: 1px solid var(--border); color: var(--muted); }
+  @media(max-width:768px){
+    footer { padding: 2rem 1.5rem; }
+    .footer-inner { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+    .footer-links { flex-wrap: wrap; gap: 1rem; }
+    .footer-bottom { flex-direction: column; gap: 0.75rem; text-align: center; }
+  }
 
   @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
   .fade-in { animation: fadeUp 0.7s ease both; }
@@ -794,8 +814,32 @@
 </div>
 
 <footer>
-  <div>ábacos<span class="acc">digitales</span> &nbsp;·&nbsp; © 2025</div>
-  <span>Rosario, Argentina</span>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo-text">ábacos<span>digitales</span></div>
+      <div class="footer-tagline">Consultoría IT · Rosario, Santa Fe, Argentina</div>
+    </div>
+    <ul class="footer-links">
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="trinidad.html">Trinidad</a></li>
+      <li><a href="configurador.html">Configurador</a></li>
+      <li><a href="https://abacosdigitales.github.io/techfix/" target="_blank">TechFix Pro</a></li>
+      <li><a href="https://abacosdigitales.github.io/soldit/" target="_blank">Sold-It</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <div class="footer-socials">
+      <a href="https://wa.me/5491126972862" target="_blank" class="footer-social" title="WhatsApp">📱</a>
+      <a href="mailto:abacosdigitales@gmail.com" class="footer-social" title="Email">✉️</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 <span>ábacos</span>digitales · Todos los derechos reservados</div>
+    <div class="footer-badges">
+      <span class="footer-badge">Rosario, ARG</span>
+      <span class="footer-badge">IT Consulting</span>
+      <span class="footer-badge">AMD Partner</span>
+    </div>
+  </div>
 </footer>
 
 <a href="https://wa.me/5491126972862?text=Hola%2C%20me%20interesa%20conocer%20m%C3%A1s%20sobre%20sus%20servicios%20de%20Consultor%C3%ADa%20IT" target="_blank" class="wa-float" aria-label="Contactar por WhatsApp">
