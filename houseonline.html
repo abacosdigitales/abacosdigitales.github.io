@@ -712,7 +712,7 @@ async function loadData() {
     { id:4, name:'Aire Acondicionado Split 3000 Frig', cat:'climatizacion', emoji:'❄️', cond:'new', price:349999, origPrice:420000, cuotas:24, shipping:true, seller:'HouseOnline', desc:'Split inverter 3000 frigorías, frío/calor, función Wi-Fi, filtro antibacterial. Incluye instalación básica.', imagen:'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80', stock:6, sold:false, features:{}, rating:4.6, reviews:42 },
     { id:5, name:'Taladro Percutor 750W', cat:'herramienta', emoji:'🔧', cond:'new', price:34999, origPrice:45000, cuotas:6, shipping:true, seller:'HouseOnline', desc:'Taladro percutor 750W con maletín, 2 velocidades, mandril 13mm. Incluye juego de brocas y puntas.', imagen:'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=80', stock:12, sold:false, features:{}, rating:4.4, reviews:58 },
     { id:6, name:'Kit Herramientas 108 Piezas', cat:'ferreteria', emoji:'🔩', cond:'new', price:28999, origPrice:null, cuotas:6, shipping:true, seller:'HouseOnline', desc:'Set completo con destornilladores, llaves, alicates, nivel, cinta métrica y maletín organizador.', imagen:'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&q=80', stock:8, sold:false, features:{}, rating:4.5, reviews:34 },
-    { id:7, name:'Smart TV 55" 4K UHD', cat:'tecnologia', emoji:'📱', cond:'new', price:399999, origPrice:480000, cuotas:24, shipping:true, seller:'HouseOnline', desc:'Smart TV 55 pulgadas 4K UHD, Android TV, HDR, 3 puertos HDMI, 2 USB, Wi-Fi y Bluetooth integrado.', imagen:'https://images.unsplash.com/photo-1593359677879-a4bb92f4834c?w=400&q=80', stock:7, sold:false, features:{}, rating:4.8, reviews:67 },
+    { id:7, name:'Smart TV 55" 4K UHD', cat:'tecnologia', emoji:'📱', cond:'new', price:399999, origPrice:480000, cuotas:24, shipping:true, seller:'HouseOnline', desc:'Smart TV 55 pulgadas 4K UHD, Android TV, HDR, 3 puertos HDMI, 2 USB, Wi-Fi y Bluetooth integrado.', imagen:'https://images.unsplash.com/photo-1601944179066-29786cb9d32a?w=400&q=80', stock:7, sold:false, features:{}, rating:4.8, reviews:67 },
     { id:8, name:'Aspiradora Ciclónica 2000W', cat:'limpieza', emoji:'🧹', cond:'new', price:44999, origPrice:58000, cuotas:6, shipping:true, seller:'HouseOnline', desc:'Aspiradora sin bolsa 2000W, filtro HEPA, depósito 2.5L, cepillo para mascotas incluido. Silenciosa.', imagen:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', stock:9, sold:false, features:{}, rating:4.2, reviews:19 },
     { id:9, name:'Microondas Digital 28L', cat:'electrodomestico', emoji:'🏠', cond:'new', price:59999, origPrice:72000, cuotas:6, shipping:true, seller:'HouseOnline', desc:'Microondas digital 28 litros, grill, 10 niveles de potencia, temporizador, interior de acero inox.', imagen:'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&q=80', stock:11, sold:false, features:{}, rating:4.3, reviews:26 },
     { id:10, name:'Ventilador de Torre 45W', cat:'climatizacion', emoji:'❄️', cond:'new', price:24999, origPrice:32000, cuotas:3, shipping:true, seller:'HouseOnline', desc:'Ventilador de torre 45W, 3 velocidades, oscilación 70°, control remoto, temporizador 8hs, silencioso.', imagen:'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80', stock:14, sold:false, features:{}, rating:4.1, reviews:12 },
@@ -1142,7 +1142,7 @@ function renderProducts(list) {
     }
     const shareBtn = document.createElement('button');
     shareBtn.className = 'btn-compartir';
-    shareBtn.textContent = '🔗 COMPARTIR';
+    shareBtn.textContent = '🔗'; shareBtn.title = 'Compartir'; shareBtn.style.cssText = 'background:#f5f5f5;border:none;color:#7a7a8a;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0;';
     shareBtn.onclick = () => compartirProducto(p.id);
     topActions.appendChild(shareBtn);
     card.appendChild(topActions);
@@ -1227,7 +1227,7 @@ function showDetail(id) {
       <div class="detail-actions">
         ${!p.sold ? `<button class="btn-wa-detail" onclick="consultarWA(${p.id})">${waIcon} CONSULTAR POR WHATSAPP</button>` : ''}
         ${!p.sold && p.stock !== 0 ? `<button class="btn-add-detail" onclick="addToCart(${p.id})">+ AGREGAR AL CARRITO</button>` : ''}
-        <button onclick="compartirProducto(${p.id})" style="background:#f5f5f5;border:none;color:#7a7a8a;border-radius:50px;padding:8px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;transition:background .2s;">🔗 Compartir</button>
+        <button onclick="compartirProducto(${p.id})" title="Compartir" style="background:#f5f5f5;border:none;color:#7a7a8a;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:background .2s;flex-shrink:0;" onmouseover="this.style.background='#e0f9fb';this.style.color='#1ab8c4'" onmouseout="this.style.background='#f5f5f5';this.style.color='#7a7a8a'">🔗</button>
       </div>
       <div class="detail-desc-title">DESCRIPCIÓN</div>
       <div class="detail-desc">${p.desc}</div>
