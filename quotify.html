@@ -219,6 +219,27 @@
 
   /* PREVIEW / PAPER */
   .preview-outer{position:sticky;top:20px;}
+  .doc-toggle{
+    display:flex;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;padding:4px;margin:0 auto 14px;max-width:800px;
+  }
+  .doc-toggle-btn{
+    flex:1;padding:9px;border:none;border-radius:7px;background:transparent;color:#c7cede;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;
+  }
+  .doc-toggle-btn.active{background:linear-gradient(155deg,var(--brass-light),var(--brass));color:var(--ink);}
+  .receipt-balance{
+    margin-top:14px;padding:12px 14px;border-radius:10px;
+    background:rgba(63,197,240,0.08);border:1px solid rgba(63,197,240,0.25);
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:13px;color:#dfe4ee;font-weight:600;
+  }
+  .receipt-balance .amt{font-family:'JetBrains Mono',monospace;font-size:16px;color:#f6f3ea;}
+  .signature-row{display:flex;gap:30px;margin-top:44px;}
+  .signature-box{
+    flex:1;text-align:center;font-size:11px;color:var(--slate);
+    border-top:1px solid var(--ink);padding-top:6px;
+  }
   .paper{
     background:var(--paper);
     border-radius:4px;
@@ -412,6 +433,7 @@
             <input type="email" id="companyEmail" placeholder="hola@empresa.com">
           </div>
         </div>
+        <p class="hint" id="companyProfileStatus">Estos datos se guardan solos y se van a completar automáticamente la próxima vez que entres.</p>
       </div>
 
       <div class="field-group">
@@ -480,12 +502,51 @@
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">6</span>Notas y condiciones</div>
+        <div class="section-title"><span class="num">6</span>Recibo de pago</div>
+        <p class="hint" style="margin:0 0 10px;">Generá un recibo tomando los datos de esta cotización. Ingresá lo que el cliente pagó y calculamos solos el saldo pendiente.</p>
+        <div class="grid2">
+          <div>
+            <label>Monto recibido</label>
+            <input type="number" id="amountReceived" min="0" step="0.01" value="0">
+          </div>
+          <div>
+            <label>Fecha de pago</label>
+            <input type="date" id="receiptDate">
+          </div>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="grid2">
+          <div>
+            <label>Método de pago</label>
+            <select id="paymentMethod">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Tarjeta">Tarjeta</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label>N.º de recibo</label>
+            <input type="text" id="receiptNumber" value="0001">
+          </div>
+        </div>
+        <div style="height:10px;"></div>
+        <label>Notas del recibo (opcional)</label>
+        <textarea id="receiptNotes" placeholder="Ej: Seña por trabajo de reparación. Saldo se abona contra entrega."></textarea>
+        <div class="receipt-balance" id="receiptBalanceBox">
+          <span>Saldo restante</span>
+          <span class="amt" id="balanceDueDisplay">0,00</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="section-title"><span class="num">7</span>Notas y condiciones</div>
         <textarea id="notes" placeholder="Ej: Precios sujetos a cambio sin previo aviso. Forma de pago: 50% al confirmar, 50% contra entrega.">Precios expresados en la moneda seleccionada. Esta cotización no incluye gastos de envío salvo que se indique lo contrario.</textarea>
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">7</span>Cotizaciones guardadas online</div>
+        <div class="section-title"><span class="num">8</span>Cotizaciones guardadas online</div>
         <div id="savedList" class="saved-list">
           <p class="hint" id="savedEmptyHint">Todavía no guardaste ninguna cotización en la nube.</p>
         </div>
@@ -498,6 +559,10 @@
     <!-- PREVIEW -->
     <div class="preview-wrap hide" id="previewWrap">
       <div class="preview-outer">
+        <div class="doc-toggle" id="docToggle">
+          <button class="doc-toggle-btn active" id="docTabQuote" type="button">🧾 Cotización</button>
+          <button class="doc-toggle-btn" id="docTabReceipt" type="button">💵 Recibo</button>
+        </div>
         <div class="paper" id="paper">
           <div class="p-head">
             <div class="p-company">
@@ -563,6 +628,81 @@
             <span id="pvFootRight"></span>
           </div>
         </div>
+
+        <div class="paper receipt-paper" id="receiptPaper" style="display:none;">
+          <div class="p-head">
+            <div class="p-company">
+              <img id="rcLogo" style="display:none;">
+              <div class="noimg" id="rcNoLogo">M</div>
+              <div>
+                <div class="p-company-name" id="rcCompanyName">Mi Empresa</div>
+                <div class="p-company-meta" id="rcCompanyMeta"></div>
+              </div>
+            </div>
+            <div class="p-doc-title">
+              <div class="label">RECIBO</div>
+              <div class="stamp">
+                <div class="n" id="rcReceiptNum">#0001</div>
+                <div class="t">N.º Recibo</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-meta-row">
+            <div class="p-meta-block">
+              <h4>Recibí de</h4>
+              <div class="name" id="rcClientName">Nombre del cliente</div>
+              <div class="line" id="rcClientAddress"></div>
+              <div class="line" id="rcRef">Corresponde a Cotización #0001</div>
+            </div>
+            <div class="p-dates">
+              <div>Fecha<b id="rcDate">—</b></div>
+              <div>Forma de pago<b id="rcMethod">—</b></div>
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                <th class="num">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Total de la cotización</td>
+                <td class="num" id="rcTotal">0,00</td>
+              </tr>
+              <tr>
+                <td>Monto recibido</td>
+                <td class="num" id="rcReceived">0,00</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr class="perforation">
+
+          <div class="totals">
+            <div class="totals-box">
+              <div class="totals-row grand"><span>Saldo restante</span><span class="amt" id="rcBalance">0,00</span></div>
+            </div>
+          </div>
+
+          <div class="p-notes" id="rcNotesWrap">
+            <h4>Notas</h4>
+            <div id="rcNotes"></div>
+          </div>
+
+          <div class="signature-row">
+            <div class="signature-box"><span>Entregado por</span></div>
+            <div class="signature-box"><span>Recibido por</span></div>
+          </div>
+
+          <div class="p-footer">
+            <span>Generado con Quotify</span>
+            <span id="rcFootRight"></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -573,7 +713,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, getDoc,
+  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc,
   getDocs, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -608,6 +748,7 @@ function isConfigured(){
     {desc:"Hosting anual", detail:"", qty:1, price:35000}
   ];
   let logoDataUrl = null;
+  let activeDocType = "quote"; // "quote" | "receipt"
 
   const $ = id => document.getElementById(id);
 
@@ -711,6 +852,7 @@ function isConfigured(){
       $("logoPreview").src = logoDataUrl;
       $("logoPreview").style.display = "block";
       renderPreview();
+      scheduleCompanyAutosave();
     };
     reader.readAsDataURL(file);
   });
@@ -780,6 +922,54 @@ function isConfigured(){
 
     $("pvNotes").textContent = $("notes").value || "";
     $("pvFootRight").textContent = "Cotización N.º " + ($("quoteNumber").value || "0001");
+
+    renderReceipt();
+  }
+
+  function renderReceipt(){
+    const companyName = $("companyName").value || "Mi Empresa";
+    $("rcCompanyName").textContent = companyName;
+    const metaParts = [$("companyAddress").value, $("companyPhone").value, $("companyEmail").value].filter(Boolean);
+    $("rcCompanyMeta").innerHTML = metaParts.join(" · ");
+
+    if(logoDataUrl){
+      $("rcLogo").src = logoDataUrl;
+      $("rcLogo").style.display = "block";
+      $("rcNoLogo").style.display = "none";
+    } else {
+      $("rcLogo").style.display = "none";
+      $("rcNoLogo").style.display = "flex";
+      $("rcNoLogo").textContent = (companyName.trim()[0]||"M").toUpperCase();
+    }
+
+    $("rcReceiptNum").textContent = "#" + ($("receiptNumber").value || "0001");
+    $("rcClientName").textContent = $("clientName").value || "Nombre del cliente";
+    $("rcClientAddress").textContent = $("clientAddress").value || "";
+    $("rcRef").textContent = "Corresponde a Cotización #" + ($("quoteNumber").value || "0001");
+    $("rcDate").textContent = fmtDate($("receiptDate").value);
+    $("rcMethod").textContent = $("paymentMethod").value || "—";
+
+    const total = calcTotals().total;
+    const received = parseFloat($("amountReceived").value) || 0;
+    const balance = total - received;
+
+    $("rcTotal").textContent = fmt(total);
+    $("rcReceived").textContent = fmt(received);
+    $("rcBalance").textContent = fmt(Math.max(balance,0));
+    $("balanceDueDisplay").textContent = fmt(balance);
+
+    const balanceBox = $("receiptBalanceBox");
+    if(balance <= 0){
+      balanceBox.style.borderColor = "rgba(62,107,79,0.4)";
+      balanceBox.style.background = "rgba(62,107,79,0.1)";
+    } else {
+      balanceBox.style.borderColor = "rgba(63,197,240,0.25)";
+      balanceBox.style.background = "rgba(63,197,240,0.08)";
+    }
+
+    const notes = $("receiptNotes").value;
+    $("rcNotes").textContent = notes || "Sin observaciones adicionales.";
+    $("rcFootRight").textContent = "Recibo N.º " + ($("receiptNumber").value || "0001");
   }
 
   // wire all inputs to re-render
@@ -790,6 +980,77 @@ function isConfigured(){
      $(id).addEventListener("input", renderPreview);
      $(id).addEventListener("change", renderPreview);
    });
+
+  ["amountReceived","receiptDate","paymentMethod","receiptNumber","receiptNotes"].forEach(id=>{
+    $(id).addEventListener("input", renderReceipt);
+    $(id).addEventListener("change", renderReceipt);
+  });
+
+  // ---------- FIREBASE: PERFIL DE EMPRESA (reutilizable) ----------
+  const COMPANY_DOC_PATH = ["settings", "company"];
+  let companyProfileTimer = null;
+  let suppressCompanyAutosave = false;
+
+  function companyDocRef(){
+    return doc(db, COMPANY_DOC_PATH[0], COMPANY_DOC_PATH[1]);
+  }
+
+  async function loadCompanyProfile(){
+    if(!firebaseReady) return;
+    try{
+      const snap = await getDoc(companyDocRef());
+      if(!snap.exists()) return;
+      const d = snap.data();
+      suppressCompanyAutosave = true;
+      if(d.companyName) $("companyName").value = d.companyName;
+      if(d.companyAddress) $("companyAddress").value = d.companyAddress;
+      if(d.companyPhone) $("companyPhone").value = d.companyPhone;
+      if(d.companyEmail) $("companyEmail").value = d.companyEmail;
+      if(d.logoDataUrl){
+        logoDataUrl = d.logoDataUrl;
+        $("logoPreview").src = logoDataUrl;
+        $("logoPreview").style.display = "block";
+      }
+      renderPreview();
+      const statusEl = $("companyProfileStatus");
+      if(statusEl) statusEl.textContent = "Datos de tu empresa cargados automáticamente ✓";
+      suppressCompanyAutosave = false;
+    } catch(err){
+      console.error(err);
+    }
+  }
+
+  function scheduleCompanyAutosave(){
+    if(suppressCompanyAutosave || !firebaseReady) return;
+    const statusEl = $("companyProfileStatus");
+    if(statusEl) statusEl.textContent = "Guardando…";
+    clearTimeout(companyProfileTimer);
+    companyProfileTimer = setTimeout(saveCompanyProfile, 1200);
+  }
+
+  async function saveCompanyProfile(){
+    if(!firebaseReady) return;
+    try{
+      await setDoc(companyDocRef(), {
+        companyName: $("companyName").value,
+        companyAddress: $("companyAddress").value,
+        companyPhone: $("companyPhone").value,
+        companyEmail: $("companyEmail").value,
+        logoDataUrl: logoDataUrl || "",
+        updatedAt: serverTimestamp()
+      }, {merge:true});
+      const statusEl = $("companyProfileStatus");
+      if(statusEl) statusEl.textContent = "Datos de tu empresa guardados ✓ (se van a reutilizar la próxima vez)";
+    } catch(err){
+      console.error(err);
+      const statusEl = $("companyProfileStatus");
+      if(statusEl) statusEl.textContent = "No se pudieron guardar los datos de la empresa.";
+    }
+  }
+
+  ["companyName","companyAddress","companyPhone","companyEmail"].forEach(id=>{
+    $(id).addEventListener("input", scheduleCompanyAutosave);
+  });
 
   // ---------- FIREBASE: GUARDADO ONLINE ----------
   let currentDocId = null;
@@ -980,6 +1241,7 @@ function isConfigured(){
         firebaseReady = true;
         showAppShell();
         setCloudStatus("conectado","ok");
+        await loadCompanyProfile();
         await refreshSavedList();
       } else {
         firebaseReady = false;
@@ -1047,6 +1309,12 @@ function isConfigured(){
     $("quoteDate").value = todayISO();
     $("quoteValid").value = addDaysISO(15);
     $("discountPct").value = 0;
+    $("amountReceived").value = 0;
+    $("receiptDate").value = todayISO();
+    $("paymentMethod").value = "Efectivo";
+    $("receiptNotes").value = "";
+    const nextReceiptNum = (parseInt($("receiptNumber").value)||0) + 1;
+    $("receiptNumber").value = String(nextReceiptNum).padStart(4,"0");
     renderItemsEditor();
     renderPreview();
   });
@@ -1058,7 +1326,7 @@ function isConfigured(){
     btn.disabled = true;
     btn.innerHTML = "Generando PDF…";
     try{
-      const paper = $("paper");
+      const paper = activeDocType === "receipt" ? $("receiptPaper") : $("paper");
       const canvas = await html2canvas(paper, {scale:2, backgroundColor:"#F6FAFF", useCORS:true});
       const imgData = canvas.toDataURL("image/png");
       const { jsPDF } = window.jspdf;
@@ -1083,8 +1351,13 @@ function isConfigured(){
           heightLeft -= pageHeight;
         }
       }
-      const num = $("quoteNumber").value || "0001";
-      pdf.save(`Cotizacion-${num}.pdf`);
+      if(activeDocType === "receipt"){
+        const rnum = $("receiptNumber").value || "0001";
+        pdf.save(`Recibo-${rnum}.pdf`);
+      } else {
+        const num = $("quoteNumber").value || "0001";
+        pdf.save(`Cotizacion-${num}.pdf`);
+      }
     } catch(err){
       console.error(err);
       alert("Ocurrió un error al generar el PDF. Probá de nuevo.");
@@ -1092,6 +1365,22 @@ function isConfigured(){
       btn.disabled = false;
       btn.innerHTML = original;
     }
+  });
+
+  // ---------- DOC TOGGLE (Cotización / Recibo) ----------
+  $("docTabQuote").addEventListener("click", ()=>{
+    activeDocType = "quote";
+    $("docTabQuote").classList.add("active");
+    $("docTabReceipt").classList.remove("active");
+    $("paper").style.display = "block";
+    $("receiptPaper").style.display = "none";
+  });
+  $("docTabReceipt").addEventListener("click", ()=>{
+    activeDocType = "receipt";
+    $("docTabReceipt").classList.add("active");
+    $("docTabQuote").classList.remove("active");
+    $("paper").style.display = "none";
+    $("receiptPaper").style.display = "block";
   });
 
   // ---------- MOBILE TABS ----------
@@ -1113,6 +1402,7 @@ function isConfigured(){
   // init
   $("quoteDate").value = todayISO();
   $("quoteValid").value = addDaysISO(15);
+  $("receiptDate").value = todayISO();
   renderItemsEditor();
   renderPreview();
   initFirebase();
