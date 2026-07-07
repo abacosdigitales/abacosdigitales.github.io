@@ -514,7 +514,7 @@
       <div class="field-group">
         <div class="section-title"><span class="num">5</span>Rentabilidad</div>
         <div class="private-box">
-          <div class="private-tag">🔒 Privado — nunca se muestra en la cotización ni en el PDF del cliente</div>
+          <div class="private-tag">Privado — nunca se muestra en la cotización ni en el PDF del cliente</div>
           <div class="profit-grid">
             <div class="profit-stat">
               <div class="label">Costo total</div>
@@ -586,12 +586,49 @@
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">8</span>Notas y condiciones</div>
+        <div class="section-title"><span class="num">8</span>Datos de facturación</div>
+        <p class="hint" style="margin:0 0 10px;">Genera una factura con los mismos ítems y totales de la cotización. No es un comprobante fiscal válido ante AFIP (no incluye CAE) — sirve como factura comercial/interna.</p>
+        <div class="grid2">
+          <div>
+            <label>N.º de factura</label>
+            <input type="text" id="invoiceNumber" value="0001">
+          </div>
+          <div>
+            <label>Fecha de emisión</label>
+            <input type="date" id="invoiceDate">
+          </div>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="grid2">
+          <div>
+            <label>Vencimiento</label>
+            <input type="date" id="invoiceDueDate">
+          </div>
+          <div>
+            <label>Condición de pago</label>
+            <input type="text" id="paymentTerms" placeholder="Ej: Pago a 30 días" value="Pago a 30 días">
+          </div>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="grid2">
+          <div>
+            <label>CUIT/CUIL empresa</label>
+            <input type="text" id="companyTaxId" placeholder="30-12345678-9">
+          </div>
+          <div>
+            <label>CUIT/CUIL/DNI cliente</label>
+            <input type="text" id="clientTaxId" placeholder="20-12345678-9">
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="section-title"><span class="num">9</span>Notas y condiciones</div>
         <textarea id="notes" placeholder="Ej: Precios sujetos a cambio sin previo aviso. Forma de pago: 50% al confirmar, 50% contra entrega.">Precios expresados en la moneda seleccionada. Esta cotización no incluye gastos de envío salvo que se indique lo contrario.</textarea>
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">9</span>Cotizaciones guardadas online</div>
+        <div class="section-title"><span class="num">10</span>Cotizaciones guardadas online</div>
         <div id="savedList" class="saved-list">
           <p class="hint" id="savedEmptyHint">Todavía no guardaste ninguna cotización en la nube.</p>
         </div>
@@ -607,6 +644,7 @@
         <div class="doc-toggle" id="docToggle">
           <button class="doc-toggle-btn active" id="docTabQuote" type="button">🧾 Cotización</button>
           <button class="doc-toggle-btn" id="docTabReceipt" type="button">💵 Recibo</button>
+          <button class="doc-toggle-btn" id="docTabInvoice" type="button">📄 Factura</button>
         </div>
         <div class="paper" id="paper">
           <div class="p-head">
@@ -748,6 +786,73 @@
             <span id="rcFootRight"></span>
           </div>
         </div>
+
+        <div class="paper invoice-paper" id="invoicePaper" style="display:none;">
+          <div class="p-head">
+            <div class="p-company">
+              <img id="ivLogo" style="display:none;">
+              <div class="noimg" id="ivNoLogo">M</div>
+              <div>
+                <div class="p-company-name" id="ivCompanyName">Mi Empresa</div>
+                <div class="p-company-meta" id="ivCompanyMeta"></div>
+                <div class="p-company-meta" id="ivCompanyTaxId"></div>
+              </div>
+            </div>
+            <div class="p-doc-title">
+              <div class="label">FACTURA</div>
+              <div class="stamp">
+                <div class="n" id="ivInvoiceNum">#0001</div>
+                <div class="t">N.º Factura</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-meta-row">
+            <div class="p-meta-block">
+              <h4>Facturar a</h4>
+              <div class="name" id="ivClientName">Nombre del cliente</div>
+              <div class="line" id="ivClientAddress"></div>
+              <div class="line" id="ivClientTaxId"></div>
+            </div>
+            <div class="p-dates">
+              <div>Emisión<b id="ivDate">—</b></div>
+              <div>Vencimiento<b id="ivDueDate">—</b></div>
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th class="num">Cant.</th>
+                <th class="num">P. Unit.</th>
+                <th class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody id="ivItemsBody"></tbody>
+          </table>
+
+          <hr class="perforation">
+
+          <div class="totals">
+            <div class="totals-box">
+              <div class="totals-row"><span>Subtotal</span><span class="amt" id="ivSubtotal">0,00</span></div>
+              <div class="totals-row" id="ivDiscountRow"><span>Descuento</span><span class="amt" id="ivDiscount">0,00</span></div>
+              <div class="totals-row" id="ivTaxRow"><span>Impuesto</span><span class="amt" id="ivTax">0,00</span></div>
+              <div class="totals-row grand"><span>Total</span><span class="amt" id="ivTotal">0,00</span></div>
+            </div>
+          </div>
+
+          <div class="p-notes">
+            <h4>Condición de pago</h4>
+            <div id="ivTerms"></div>
+          </div>
+
+          <div class="p-footer">
+            <span>Generado con Quotify</span>
+            <span id="ivFootRight"></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -859,7 +964,7 @@ function isConfigured(){
             <input type="number" min="0" step="0.01" data-field="price" data-i="${i}" value="${item.price}">
           </div>
           <div>
-            <label style="margin-bottom:3px;">Costo unitario 🔒</label>
+            <label style="margin-bottom:3px;">Costo unitario</label>
             <input type="number" min="0" step="0.01" data-field="cost" data-i="${i}" value="${cost}">
           </div>
         </div>
@@ -1051,6 +1156,66 @@ function isConfigured(){
     const notes = $("receiptNotes").value;
     $("rcNotes").textContent = notes || "Sin observaciones adicionales.";
     $("rcFootRight").textContent = "Recibo N.º " + ($("receiptNumber").value || "0001");
+
+    renderInvoice();
+  }
+
+  function renderInvoice(){
+    const companyName = $("companyName").value || "Mi Empresa";
+    $("ivCompanyName").textContent = companyName;
+    const metaParts = [$("companyAddress").value, $("companyPhone").value, $("companyEmail").value].filter(Boolean);
+    $("ivCompanyMeta").innerHTML = metaParts.join(" · ");
+    const companyTaxId = $("companyTaxId").value;
+    $("ivCompanyTaxId").textContent = companyTaxId ? ("CUIT/CUIL: " + companyTaxId) : "";
+
+    if(logoDataUrl){
+      $("ivLogo").src = logoDataUrl;
+      $("ivLogo").style.display = "block";
+      $("ivNoLogo").style.display = "none";
+    } else {
+      $("ivLogo").style.display = "none";
+      $("ivNoLogo").style.display = "flex";
+      $("ivNoLogo").textContent = (companyName.trim()[0]||"M").toUpperCase();
+    }
+
+    $("ivInvoiceNum").textContent = "#" + ($("invoiceNumber").value || "0001");
+    $("ivClientName").textContent = $("clientName").value || "Nombre del cliente";
+    $("ivClientAddress").textContent = $("clientAddress").value || "";
+    const clientTaxId = $("clientTaxId").value;
+    $("ivClientTaxId").textContent = clientTaxId ? ("CUIT/CUIL/DNI: " + clientTaxId) : "";
+    $("ivDate").textContent = fmtDate($("invoiceDate").value);
+    $("ivDueDate").textContent = fmtDate($("invoiceDueDate").value);
+
+    const body = $("ivItemsBody");
+    body.innerHTML = "";
+    if(items.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="4">Agregá ítems para verlos aquí</td></tr>`;
+    } else {
+      items.forEach(it=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div class="desc-name">${escapeHtml(it.desc)||"Sin descripción"}</div>
+            ${it.detail? `<div class="desc-sub">${escapeHtml(it.detail)}</div>`:""}
+          </td>
+          <td class="num">${it.qty}</td>
+          <td class="num">${fmtPlain(it.price)}</td>
+          <td class="num">${fmtPlain(it.qty*it.price)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    const t = calcTotals();
+    $("ivSubtotal").textContent = fmt(t.subtotal);
+    $("ivDiscount").textContent = "- " + fmt(t.discountAmt);
+    $("ivDiscountRow").style.display = t.discountPct>0 ? "flex":"none";
+    $("ivTax").textContent = fmt(t.taxAmt);
+    $("ivTaxRow").style.display = t.taxPct>0 ? "flex":"none";
+    $("ivTotal").textContent = fmt(t.total);
+
+    $("ivTerms").textContent = $("paymentTerms").value || "A convenir";
+    $("ivFootRight").textContent = "Factura N.º " + ($("invoiceNumber").value || "0001");
   }
 
   // wire all inputs to re-render
@@ -1065,6 +1230,11 @@ function isConfigured(){
   ["amountReceived","receiptDate","paymentMethod","receiptNumber","receiptNotes"].forEach(id=>{
     $(id).addEventListener("input", renderReceipt);
     $(id).addEventListener("change", renderReceipt);
+  });
+
+  ["invoiceNumber","invoiceDate","invoiceDueDate","paymentTerms","companyTaxId","clientTaxId"].forEach(id=>{
+    $(id).addEventListener("input", renderInvoice);
+    $(id).addEventListener("change", renderInvoice);
   });
 
   // ---------- FIREBASE: PERFIL DE EMPRESA (reutilizable) ----------
@@ -1396,18 +1566,34 @@ function isConfigured(){
     $("receiptNotes").value = "";
     const nextReceiptNum = (parseInt($("receiptNumber").value)||0) + 1;
     $("receiptNumber").value = String(nextReceiptNum).padStart(4,"0");
+    $("invoiceDate").value = todayISO();
+    $("invoiceDueDate").value = addDaysISO(30);
+    $("clientTaxId").value = "";
+    const nextInvoiceNum = (parseInt($("invoiceNumber").value)||0) + 1;
+    $("invoiceNumber").value = String(nextInvoiceNum).padStart(4,"0");
     renderItemsEditor();
     renderPreview();
   });
 
   // ---------- PDF EXPORT ----------
+  const paperByDocType = {
+    quote: () => $("paper"),
+    receipt: () => $("receiptPaper"),
+    invoice: () => $("invoicePaper")
+  };
+  function filenameByDocType(){
+    if(activeDocType === "receipt") return `Recibo-${$("receiptNumber").value || "0001"}.pdf`;
+    if(activeDocType === "invoice") return `Factura-${$("invoiceNumber").value || "0001"}.pdf`;
+    return `Cotizacion-${$("quoteNumber").value || "0001"}.pdf`;
+  }
+
   $("downloadBtn").addEventListener("click", async ()=>{
     const btn = $("downloadBtn");
     const original = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = "Generando PDF…";
     try{
-      const paper = activeDocType === "receipt" ? $("receiptPaper") : $("paper");
+      const paper = paperByDocType[activeDocType]();
       const canvas = await html2canvas(paper, {scale:2, backgroundColor:"#F6FAFF", useCORS:true});
       const imgData = canvas.toDataURL("image/png");
       const { jsPDF } = window.jspdf;
@@ -1432,13 +1618,7 @@ function isConfigured(){
           heightLeft -= pageHeight;
         }
       }
-      if(activeDocType === "receipt"){
-        const rnum = $("receiptNumber").value || "0001";
-        pdf.save(`Recibo-${rnum}.pdf`);
-      } else {
-        const num = $("quoteNumber").value || "0001";
-        pdf.save(`Cotizacion-${num}.pdf`);
-      }
+      pdf.save(filenameByDocType());
     } catch(err){
       console.error(err);
       alert("Ocurrió un error al generar el PDF. Probá de nuevo.");
@@ -1448,21 +1628,22 @@ function isConfigured(){
     }
   });
 
-  // ---------- DOC TOGGLE (Cotización / Recibo) ----------
-  $("docTabQuote").addEventListener("click", ()=>{
-    activeDocType = "quote";
-    $("docTabQuote").classList.add("active");
-    $("docTabReceipt").classList.remove("active");
-    $("paper").style.display = "block";
-    $("receiptPaper").style.display = "none";
-  });
-  $("docTabReceipt").addEventListener("click", ()=>{
-    activeDocType = "receipt";
-    $("docTabReceipt").classList.add("active");
-    $("docTabQuote").classList.remove("active");
-    $("paper").style.display = "none";
-    $("receiptPaper").style.display = "block";
-  });
+  // ---------- DOC TOGGLE (Cotización / Recibo / Factura) ----------
+  const docTabs = {
+    quote: {btn: $("docTabQuote"), paper: $("paper")},
+    receipt: {btn: $("docTabReceipt"), paper: $("receiptPaper")},
+    invoice: {btn: $("docTabInvoice"), paper: $("invoicePaper")}
+  };
+  function switchDocType(type){
+    activeDocType = type;
+    Object.keys(docTabs).forEach(key=>{
+      docTabs[key].btn.classList.toggle("active", key === type);
+      docTabs[key].paper.style.display = key === type ? "block" : "none";
+    });
+  }
+  $("docTabQuote").addEventListener("click", ()=> switchDocType("quote"));
+  $("docTabReceipt").addEventListener("click", ()=> switchDocType("receipt"));
+  $("docTabInvoice").addEventListener("click", ()=> switchDocType("invoice"));
 
   // ---------- MOBILE TABS ----------
   const formPanel = $("formPanel");
@@ -1484,6 +1665,8 @@ function isConfigured(){
   $("quoteDate").value = todayISO();
   $("quoteValid").value = addDaysISO(15);
   $("receiptDate").value = todayISO();
+  $("invoiceDate").value = todayISO();
+  $("invoiceDueDate").value = addDaysISO(30);
   renderItemsEditor();
   renderPreview();
   initFirebase();
