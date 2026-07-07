@@ -191,7 +191,7 @@
     gap:8px;
   }
   .item-row .r1{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;}
-  .item-row .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .item-row .r2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
   .add-item-btn{
     border:1px dashed rgba(255,255,255,0.3);
     background:transparent;color:#d6dbe6;
@@ -199,6 +199,30 @@
     display:flex;align-items:center;justify-content:center;gap:8px;
   }
   .add-item-btn:hover{background:rgba(255,255,255,0.06);}
+
+  .item-margin{
+    font-size:11px;margin-top:2px;padding:4px 8px;border-radius:6px;
+    display:flex;justify-content:space-between;background:rgba(255,255,255,0.03);
+  }
+  .item-margin.profit{color:#7fd9a0;}
+  .item-margin.loss{color:#e79a9a;}
+
+  .private-box{
+    border:1px dashed rgba(63,197,240,0.3);border-radius:10px;padding:14px;
+    background:rgba(63,197,240,0.04);
+  }
+  .private-tag{
+    display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+    color:#93a0b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;
+  }
+  .profit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .profit-stat{
+    background:rgba(255,255,255,0.04);border-radius:9px;padding:10px;text-align:center;
+  }
+  .profit-stat .label{font-size:10px;color:#93a0b8;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+  .profit-stat .value{font-family:'JetBrains Mono',monospace;font-size:14.5px;font-weight:700;color:#f0ede3;}
+  .profit-stat .value.profit{color:#7fd9a0;}
+  .profit-stat .value.loss{color:#e79a9a;}
 
   .hint{color:#93a0b8;font-size:12px;line-height:1.5;margin-top:6px;}
   .hint code{background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;}
@@ -488,7 +512,28 @@
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">5</span>Descuentos e impuestos</div>
+        <div class="section-title"><span class="num">5</span>Rentabilidad</div>
+        <div class="private-box">
+          <div class="private-tag">🔒 Privado — nunca se muestra en la cotización ni en el PDF del cliente</div>
+          <div class="profit-grid">
+            <div class="profit-stat">
+              <div class="label">Costo total</div>
+              <div class="value" id="statTotalCost">0,00</div>
+            </div>
+            <div class="profit-stat">
+              <div class="label">Ganancia total</div>
+              <div class="value" id="statTotalProfit">0,00</div>
+            </div>
+            <div class="profit-stat">
+              <div class="label">Margen</div>
+              <div class="value" id="statMarginPct">0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="section-title"><span class="num">6</span>Descuentos e impuestos</div>
         <div class="grid2">
           <div>
             <label>Descuento (%)</label>
@@ -502,7 +547,7 @@
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">6</span>Recibo de pago</div>
+        <div class="section-title"><span class="num">7</span>Recibo de pago</div>
         <p class="hint" style="margin:0 0 10px;">Generá un recibo tomando los datos de esta cotización. Ingresá lo que el cliente pagó y calculamos solos el saldo pendiente.</p>
         <div class="grid2">
           <div>
@@ -541,12 +586,12 @@
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">7</span>Notas y condiciones</div>
+        <div class="section-title"><span class="num">8</span>Notas y condiciones</div>
         <textarea id="notes" placeholder="Ej: Precios sujetos a cambio sin previo aviso. Forma de pago: 50% al confirmar, 50% contra entrega.">Precios expresados en la moneda seleccionada. Esta cotización no incluye gastos de envío salvo que se indique lo contrario.</textarea>
       </div>
 
       <div class="field-group">
-        <div class="section-title"><span class="num">8</span>Cotizaciones guardadas online</div>
+        <div class="section-title"><span class="num">9</span>Cotizaciones guardadas online</div>
         <div id="savedList" class="saved-list">
           <p class="hint" id="savedEmptyHint">Todavía no guardaste ninguna cotización en la nube.</p>
         </div>
@@ -744,8 +789,8 @@ function isConfigured(){
 
 (function(){
   let items = [
-    {desc:"Diseño y desarrollo de sitio web", detail:"Incluye diseño responsive y 5 secciones", qty:1, price:150000},
-    {desc:"Hosting anual", detail:"", qty:1, price:35000}
+    {desc:"Diseño y desarrollo de sitio web", detail:"Incluye diseño responsive y 5 secciones", qty:1, price:150000, cost:60000},
+    {desc:"Hosting anual", detail:"", qty:1, price:35000, cost:18000}
   ];
   let logoDataUrl = null;
   let activeDocType = "quote"; // "quote" | "receipt"
@@ -781,12 +826,23 @@ function isConfigured(){
   }
 
   // ---------- ITEMS EDITOR ----------
+  function computeItemMargin(item){
+    const cost = item.cost || 0;
+    const lineRevenue = item.qty * item.price;
+    const lineCost = item.qty * cost;
+    const lineProfit = lineRevenue - lineCost;
+    const marginPct = lineRevenue > 0 ? (lineProfit/lineRevenue*100) : 0;
+    return {lineProfit, marginPct};
+  }
+
   function renderItemsEditor(){
     const wrap = $("itemsEditor");
     wrap.innerHTML = "";
     items.forEach((item, i)=>{
       const row = document.createElement("div");
       row.className = "item-row";
+      const cost = item.cost || 0;
+      const {lineProfit, marginPct} = computeItemMargin(item);
       row.innerHTML = `
         <div class="r1">
           <input type="text" placeholder="Descripción del ítem" data-field="desc" data-i="${i}" value="${escapeAttr(item.desc)}">
@@ -802,6 +858,14 @@ function isConfigured(){
             <label style="margin-bottom:3px;">Precio unitario</label>
             <input type="number" min="0" step="0.01" data-field="price" data-i="${i}" value="${item.price}">
           </div>
+          <div>
+            <label style="margin-bottom:3px;">Costo unitario 🔒</label>
+            <input type="number" min="0" step="0.01" data-field="cost" data-i="${i}" value="${cost}">
+          </div>
+        </div>
+        <div class="item-margin ${lineProfit>=0?'profit':'loss'}" id="margin-${i}">
+          <span>Margen (privado)</span>
+          <span>${fmt(lineProfit)} (${marginPct.toFixed(1)}%)</span>
         </div>
       `;
       wrap.appendChild(row);
@@ -811,10 +875,18 @@ function isConfigured(){
       inp.addEventListener("input", e=>{
         const i = +e.target.dataset.i;
         const f = e.target.dataset.field;
-        if(f==="qty" || f==="price"){
+        if(f==="qty" || f==="price" || f==="cost"){
           items[i][f] = parseFloat(e.target.value) || 0;
         } else {
           items[i][f] = e.target.value;
+        }
+        if(f==="qty" || f==="price" || f==="cost"){
+          const marginEl = $(`margin-${i}`);
+          if(marginEl){
+            const {lineProfit, marginPct} = computeItemMargin(items[i]);
+            marginEl.className = "item-margin " + (lineProfit>=0 ? "profit":"loss");
+            marginEl.innerHTML = `<span>Margen (privado)</span><span>${fmt(lineProfit)} (${marginPct.toFixed(1)}%)</span>`;
+          }
         }
         renderPreview();
       });
@@ -837,7 +909,7 @@ function isConfigured(){
   }
 
   $("addItemBtn").addEventListener("click", ()=>{
-    items.push({desc:"", detail:"", qty:1, price:0});
+    items.push({desc:"", detail:"", qty:1, price:0, cost:0});
     renderItemsEditor();
     renderPreview();
   });
@@ -860,13 +932,16 @@ function isConfigured(){
   // ---------- PREVIEW ----------
   function calcTotals(){
     const subtotal = items.reduce((a,it)=> a + (it.qty*it.price), 0);
+    const totalCost = items.reduce((a,it)=> a + (it.qty*(it.cost||0)), 0);
+    const totalProfit = subtotal - totalCost;
+    const marginPct = subtotal > 0 ? (totalProfit/subtotal*100) : 0;
     const discountPct = parseFloat($("discountPct").value)||0;
     const taxPct = parseFloat($("taxPct").value)||0;
     const discountAmt = subtotal * (discountPct/100);
     const taxable = subtotal - discountAmt;
     const taxAmt = taxable * (taxPct/100);
     const total = taxable + taxAmt;
-    return {subtotal, discountAmt, taxAmt, total, discountPct, taxPct};
+    return {subtotal, discountAmt, taxAmt, total, discountPct, taxPct, totalCost, totalProfit, marginPct};
   }
 
   function renderPreview(){
@@ -919,6 +994,12 @@ function isConfigured(){
     $("pvTax").textContent = fmt(t.taxAmt);
     $("pvTaxRow").style.display = t.taxPct>0 ? "flex":"none";
     $("pvTotal").textContent = fmt(t.total);
+
+    $("statTotalCost").textContent = fmt(t.totalCost);
+    $("statTotalProfit").textContent = fmt(t.totalProfit);
+    $("statTotalProfit").className = "value " + (t.totalProfit>=0 ? "profit":"loss");
+    $("statMarginPct").textContent = t.marginPct.toFixed(1) + "%";
+    $("statMarginPct").className = "value " + (t.totalProfit>=0 ? "profit":"loss");
 
     $("pvNotes").textContent = $("notes").value || "";
     $("pvFootRight").textContent = "Cotización N.º " + ($("quoteNumber").value || "0001");
@@ -1185,7 +1266,7 @@ function isConfigured(){
       $("discountPct").value = d.discountPct || 0;
       $("taxPct").value = (d.taxPct != null) ? d.taxPct : 21;
       $("notes").value = d.notes || "";
-      items = Array.isArray(d.items) && d.items.length ? d.items : [{desc:"", detail:"", qty:1, price:0}];
+      items = Array.isArray(d.items) && d.items.length ? d.items.map(it=>({cost:0,...it})) : [{desc:"", detail:"", qty:1, price:0, cost:0}];
       renderItemsEditor();
       renderPreview();
       setCloudStatus("cotización cargada","ok");
@@ -1299,7 +1380,7 @@ function isConfigured(){
   // ---------- RESET ----------
   $("resetBtn").addEventListener("click", ()=>{
     if(!confirm("¿Iniciar una cotización nueva? Se perderán los datos actuales del cliente e ítems.")) return;
-    items = [{desc:"", detail:"", qty:1, price:0}];
+    items = [{desc:"", detail:"", qty:1, price:0, cost:0}];
     logoDataUrl = null;
     currentDocId = null;
     $("logoPreview").style.display="none";
