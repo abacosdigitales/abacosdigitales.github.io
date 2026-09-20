@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Publicaciones y consejos de computación | Ábacosdigitales</title>
+<meta name="description" content="Consejos de computación, mantenimiento, hardware y seguridad explicados en simple, por Ábacosdigitales.">
+<meta property="og:title" content="Publicaciones | Ábacosdigitales"><meta property="og:type" content="website"><meta property="og:image" content="og-image.jpg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="blog.css"></head><body>
+<nav><a class="logo-wrap" href="index.html"><img class="logo-img" src="logo.png" width="40" height="40" alt=""><span class="logo-text">abacos<span>digitales</span></span></a><ul class="nav-links"><li><a href="https://abacosdigitales.github.io/techfix/" target="_blank" rel="noopener">TechFix</a></li><li><a href="https://abacosdigitales.github.io/soldit/" target="_blank" rel="noopener">Sold-It</a></li><li><a href="https://abacosdigitales.github.io/incode" target="_blank" rel="noopener">Incode</a></li><li><a href="index.html#servicios">Servicios</a></li><li><a href="index.html#proceso">Proceso</a></li><li><a href="index.html#clientes">Clientes</a></li><li><a href="blog.html" aria-current="page">Publicaciones</a></li><li><a href="index.html#contacto">Contacto</a></li></ul><a class="nav-cta" href="https://wa.me/5491126972862?text=Hola%2C%20me%20interesa%20conocer%20mas%20sobre%20sus%20servicios" target="_blank" rel="noopener">Hablemos</a></nav>
+<main class="wrap">
+<header class="hero"><h1>Consejos de computación, sin vueltas</h1><p>Mantenimiento, hardware, seguridad y trucos para que tu equipo ande mejor y te dure más.</p></header>
+<div class="filters" role="group" aria-label="Filtrar por categoría"><button class="on" data-c="all">Todas</button><button data-c="Consejos">Consejos</button><button data-c="Hardware">Hardware</button><button data-c="Seguridad">Seguridad</button></div>
+<section class="grid">
+<a class="post" data-c="Consejos" href="articulo-mantenimiento-pc.html"><div class="cover"><img src="portada-mantenimiento.jpg" width="1600" height="900" loading="lazy" alt="Ventilador de PC con polvo acumulado"></div><div class="body"><div class="meta">Consejos <span>· 20 sep 2026 · 4 min</span></div><h2>5 señales de que tu PC necesita mantenimiento</h2><p>Ruidos, lentitud y temperatura: cómo detectar a tiempo lo que le pasa a tu equipo.</p></div></a>
+<a class="post" data-c="Hardware" href="articulo-ssd-vs-hdd.html"><div class="cover"><img src="portada-ssd-vs-hdd.jpg" width="1600" height="900" loading="lazy" alt="Disco rígido y unidad SSD"></div><div class="body"><div class="meta">Hardware <span>· 20 sep 2026 · 3 min</span></div><h2>SSD o disco rígido: cuál te conviene</h2><p>La mejora más notoria que le podés hacer a una PC, explicada en simple.</p></div></a>
+</section></main>
+<footer><div class="f-in"><div><div class="logo-text">abacos<span>digitales</span></div><p>Consultoría IT · Rosario, Santa Fe, Argentina</p></div><ul class="f-links"><li><a href="index.html#servicios">Servicios</a></li><li><a href="blog.html">Publicaciones</a></li><li><a href="https://abacosdigitales.github.io/techfix/" target="_blank" rel="noopener">TechFix</a></li><li><a href="https://abacosdigitales.github.io/soldit/" target="_blank" rel="noopener">Sold-It</a></li><li><a href="https://abacosdigitales.github.io/incode" target="_blank" rel="noopener">Incode</a></li></ul></div><div class="f-bot">2026 abacosdigitales · Todos los derechos reservados</div></footer>
+<script>
+document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{
+document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('on',x===b));
+document.querySelectorAll('.post').forEach(p=>p.classList.toggle('hide',b.dataset.c!=='all'&&p.dataset.c!==b.dataset.c))});
+</script></body></html>
