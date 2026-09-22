@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Pacman Cumpleaños</title>
+<style>
+  :root{
+    --bg:#05010f; --wall:#2b2bff; --dot:#ffd866; --text:#fff;
+    padding-top: env(safe-area-inset-top,0px);
+    padding-bottom: env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{height:100%; margin:0; background:var(--bg); overflow:hidden; touch-action:none;
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif;}
+  body{display:flex; flex-direction:column; align-items:center; color:var(--text);}
+  #hud{display:flex; justify-content:space-between; width:100%; max-width:520px;
+    padding:8px 16px; font-size:14px; letter-spacing:.5px; opacity:.9;}
+  #hud b{color:var(--dot);}
+  #stage{position:relative;}
+  canvas{display:block; background:#05010f; border-radius:10px; box-shadow:0 0 0 3px #1a1a4d, 0 0 30px rgba(43,43,255,.4);}
+  #dpad{margin-top:auto; margin-bottom:18px; display:grid;
+    grid-template-columns:56px 56px 56px; grid-template-rows:56px 56px 56px; gap:6px;
+    padding-bottom:env(safe-area-inset-bottom,0px);}
+  #dpad button{background:#191945; border:1px solid #3535a0; color:#fff; border-radius:14px;
+    font-size:22px; display:flex; align-items:center; justify-content:center; touch-action:manipulation;}
+  #dpad button:active{background:#3535a0;}
+  #up{grid-column:2; grid-row:1;} #left{grid-column:1; grid-row:2;}
+  #right{grid-column:3; grid-row:2;} #down{grid-column:2; grid-row:3;}
+  #mid{grid-column:2; grid-row:2;}
+  #overlay{position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(5,1,15,.95); text-align:center; padding:24px; z-index:10;}
+  #overlay h1{font-size:clamp(28px,7vw,48px); margin:0 0 6px; color:#ffd866; text-shadow:0 0 20px #ffd866;}
+  #overlay p{font-size:18px; margin:4px 0 22px; opacity:.9;}
+  #overlay button{background:#ffd866; border:none; padding:12px 26px; border-radius:24px; font-size:16px; font-weight:600;}
+  .confetti{position:absolute; top:-10%; font-size:22px; animation:fall linear infinite;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);}}
+</style>
+</head>
+<body>
+  <div id="hud"><span>🍬 <b id="score">0</b></span><span>👻 <b id="eaten">0</b> comidos</span></div>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div id="dpad">
+    <button id="up">▲</button><div id="mid"></div>
+    <button id="left">◀</button><button id="right">▶</button>
+    <button id="down">▼</button>
+  </div>
+
+  <div id="overlay">
+    <h1>You Win a<br>Happy Birthday 🎂</h1>
+    <p>¡Comiste todas las píldoras!</p>
+    <button onclick="location.reload()">Jugar de nuevo</button>
+  </div>
+
+<script>
+const COLS=13, ROWS=15;
+let cell = Math.floor(Math.min(window.innerWidth/COLS, (window.innerHeight-190)/ROWS));
+cell = Math.max(20, Math.min(cell,36));
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+cv.width=COLS*cell; cv.height=ROWS*cell;
+
+function buildGrid(){
+  const g=[];
+  for(let y=0;y<ROWS;y++){const row=[];
+    for(let x=0;x<COLS;x++) row.push((x===0||y===0||x===COLS-1||y===ROWS-1)?'W':'D');
+    g.push(row);
+  }
+  const walls=[[2,2],[3,2],[4,2],[8,2],[9,2],[10,2],
+    [2,12],[3,12],[4,12],[8,12],[9,12],[10,12],
+    [2,4],[2,5],[2,6],[10,4],[10,5],[10,6],
+    [2,8],[2,9],[2,10],[10,8],[10,9],[10,10],
+    [5,6],[6,6],[7,6],[5,7],[7,7],[5,8],[7,8]];
+  walls.forEach(([x,y])=>g[y][x]='W');
+  g[7][6]='E'; g[11][6]='E';
+  [[1,1],[11,1],[1,13],[11,13]].forEach(([x,y])=>g[y][x]='O');
+  return g;
+}
+let grid=buildGrid();
+let dotsLeft=0;
+for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) if(grid[y][x]==='D'||grid[y][x]==='O') dotsLeft++;
+const canMove=(x,y)=> x>=0&&y>=0&&x<COLS&&y<ROWS && grid[y][x]!=='W';
+
+const DIRS={U:{x:0,y:-1},D:{x:0,y:1},L:{x:-1,y:0},R:{x:1,y:0},N:{x:0,y:0}};
+
+function makeEntity(gx,gy,speedTiles){
+  return {gx,gy,dir:DIRS.N,next:DIRS.N,progress:0,stepTime:1/speedTiles,active:true,scared:false};
+}
+const pac = makeEntity(6,11,5.2);
+const ghostDefs=[
+  {color:'#ff3b3b', pos:[5,7]},
+  {color:'#ff9ad6', pos:[6,7]},
+  {color:'#5bd7ff', pos:[7,7]},
+  {color:'#ffb15b', pos:[6,6]}
+];
+const ghosts=ghostDefs.map(d=>Object.assign(makeEntity(d.pos[0],d.pos[1],3.8),{color:d.color}));
+
+let score=0, eatenCount=0, scaredTimer=0, won=false;
+const scoreEl=document.getElementById('score'), eatenEl=document.getElementById('eaten');
+
+function setPacDir(next){ pac.next = next; }
+document.getElementById('up').onpointerdown=()=>setPacDir(DIRS.U);
+document.getElementById('down').onpointerdown=()=>setPacDir(DIRS.D);
+document.getElementById('left').onpointerdown=()=>setPacDir(DIRS.L);
+document.getElementById('right').onpointerdown=()=>setPacDir(DIRS.R);
+
+let touchStart=null;
+cv.addEventListener('touchstart',e=>{touchStart=e.touches[0];},{passive:true});
+cv.addEventListener('touchend',e=>{
+  if(!touchStart) return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-touchStart.clientX, dy=t.clientY-touchStart.clientY;
+  if(Math.abs(dx)>Math.abs(dy)){ setPacDir(dx>0?DIRS.R:DIRS.L); } else { setPacDir(dy>0?DIRS.D:DIRS.U); }
+  touchStart=null;
+},{passive:true});
+
+function eatAt(gx,gy){
+  const c=grid[gy][gx];
+  if(c==='D'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; checkWin(); }
+  else if(c==='O'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; checkWin(); scaredTimer=7;
+    ghosts.forEach(g=>{ if(g.active) g.scared=true; }); }
+}
+function checkWin(){
+  if(dotsLeft<=0 && !won){ won=true; document.getElementById('overlay').style.display='flex'; launchConfetti(); }
+}
+
+function arriveTile(ent, isPac){
+  if(isPac){
+    if(canMove(ent.gx+ent.next.x, ent.gy+ent.next.y)) ent.dir=ent.next;
+    else if(!canMove(ent.gx+ent.dir.x, ent.gy+ent.dir.y)) ent.dir=DIRS.N;
+    eatAt(ent.gx,ent.gy);
+  } else {
+    const opts=[DIRS.U,DIRS.D,DIRS.L,DIRS.R].filter(d=>canMove(ent.gx+d.x,ent.gy+d.y));
+    const rev={x:-ent.dir.x,y:-ent.dir.y};
+    let choices = opts.filter(d=>!(d.x===rev.x&&d.y===rev.y));
+    if(choices.length===0) choices=opts;
+    if(choices.length===0){ ent.dir=DIRS.N; return; }
+    let pick;
+    const toPacDist=d=>{
+      const nx=ent.gx+d.x, ny=ent.gy+d.y;
+      return Math.hypot(nx-pac.gx, ny-pac.gy);
+    };
+    if(ent.scared){
+      choices.sort((a,b)=>toPacDist(b)-toPacDist(a));
+      pick = Math.random()<0.7 ? choices[0] : choices[Math.floor(Math.random()*choices.length)];
+    } else {
+      if(Math.random()<0.45){
+        choices.sort((a,b)=>toPacDist(a)-toPacDist(b));
+        pick=choices[0];
+      } else {
+        pick=choices[Math.floor(Math.random()*choices.length)];
+      }
+    }
+    ent.dir=pick;
+  }
+}
+arriveTile(pac,true);
+ghosts.forEach(g=>arriveTile(g,false));
+
+function updateEntity(ent, dt, isPac){
+  if(ent.dir.x===0 && ent.dir.y===0){ arriveTile(ent,isPac); if(ent.dir.x===0&&ent.dir.y===0) return; }
+  ent.progress += dt/ent.stepTime;
+  if(ent.progress>=1){
+    ent.progress=0;
+    ent.gx+=ent.dir.x; ent.gy+=ent.dir.y;
+    arriveTile(ent,isPac);
+  }
+}
+function renderPos(ent){ return {x:(ent.gx+ent.dir.x*ent.progress+0.5)*cell, y:(ent.gy+ent.dir.y*ent.progress+0.5)*cell}; }
+
+let lastT=null;
+function loop(t){
+  if(lastT===null) lastT=t;
+  const dt=Math.min((t-lastT)/1000, 0.05); lastT=t;
+  if(!won){
+    updateEntity(pac,dt,true);
+    ghosts.forEach(g=>{ if(g.active) updateEntity(g,dt,false); });
+    if(scaredTimer>0){ scaredTimer-=dt; if(scaredTimer<=0){ scaredTimer=0; ghosts.forEach(g=>g.scared=false); } }
+
+    const pp=renderPos(pac);
+    ghosts.forEach(g=>{
+      if(!g.active) return;
+      const gp=renderPos(g);
+      if(Math.hypot(pp.x-gp.x,pp.y-gp.y) < cell*0.55){
+        if(g.scared){ g.active=false; eatenCount++; eatenEl.textContent=eatenCount;
+        } else {
+          pac.gx=6; pac.gy=11; pac.dir=DIRS.N; pac.next=DIRS.N; pac.progress=0;
+        }
+      }
+    });
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function draw(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const c=grid[y][x];
+    if(c==='W'){ ctx.fillStyle='#1a1a6b'; ctx.fillRect(x*cell+1,y*cell+1,cell-2,cell-2); }
+    else if(c==='D'){ ctx.fillStyle='#ffd866'; ctx.beginPath(); ctx.arc(x*cell+cell/2,y*cell+cell/2,cell*0.06,0,7); ctx.fill(); }
+    else if(c==='O'){ ctx.fillStyle='#ffd866'; ctx.beginPath();
+      ctx.arc(x*cell+cell/2,y*cell+cell/2,cell*0.18+Math.sin(performance.now()/150)*1.5,0,7); ctx.fill(); }
+  }
+  const pp=renderPos(pac);
+  ctx.fillStyle='#ffe14d';
+  const ang = pac.dir.x===1?0: pac.dir.x===-1?Math.PI: pac.dir.y===1?Math.PI/2: pac.dir.y===-1?-Math.PI/2:0;
+  const mouth = 0.22+0.18*Math.abs(Math.sin(performance.now()/90));
+  ctx.beginPath();
+  ctx.arc(pp.x,pp.y,cell*0.42, ang+mouth*Math.PI, ang+(2-mouth)*Math.PI);
+  ctx.lineTo(pp.x,pp.y); ctx.fill();
+
+  ghosts.forEach(g=>{
+    if(!g.active) return;
+    const gp=renderPos(g);
+    ctx.fillStyle = g.scared ? (scaredTimer<2 && Math.floor(performance.now()/200)%2===0 ? '#fff':'#3b3bff') : g.color;
+    const r=cell*0.4;
+    ctx.beginPath();
+    ctx.arc(gp.x,gp.y-r*0.1,r,Math.PI,0);
+    ctx.lineTo(gp.x+r,gp.y+r*0.7);
+    for(let i=0;i<3;i++){
+      const step=(2*r)/3;
+      ctx.lineTo(gp.x+r-step*(i+0.5), gp.y+r*0.35);
+      ctx.lineTo(gp.x+r-step*(i+1), gp.y+r*0.7);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(gp.x-r*0.35,gp.y-r*0.2,r*0.22,0,7); ctx.arc(gp.x+r*0.35,gp.y-r*0.2,r*0.22,0,7); ctx.fill();
+    if(!g.scared){
+      ctx.fillStyle='#233'; const ex=g.dir.x*r*0.1, ey=g.dir.y*r*0.1;
+      ctx.beginPath(); ctx.arc(gp.x-r*0.35+ex,gp.y-r*0.2+ey,r*0.1,0,7); ctx.arc(gp.x+r*0.35+ex,gp.y-r*0.2+ey,r*0.1,0,7); ctx.fill();
+    }
+  });
+}
+
+function launchConfetti(){
+  const ov=document.getElementById('overlay'); const emojis=['🎈','🎉','🎂','✨','🎊'];
+  for(let i=0;i<24;i++){
+    const s=document.createElement('div'); s.className='confetti'; s.textContent=emojis[i%emojis.length];
+    s.style.left=Math.random()*100+'%'; s.style.animationDuration=(3+Math.random()*3)+'s';
+    s.style.animationDelay=(Math.random()*2)+'s'; ov.appendChild(s);
+  }
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
