@@ -75,7 +75,7 @@
     <button class="btn-primary" onclick="startGame()">JUGAR</button>
     <button class="btn-secondary" onclick="window.open('https://abacosdigitales.github.io/','_blank')">Visitar sitio</button>
   </div>
-  <div id="hud"><span>🍬 <b id="score">0</b></span><span id="lives-wrap">Vidas: <b id="lives">3</b></span><span>👻 <b id="eaten">0</b> comidos</span></div>
+  <div id="hud"><span>🍬 <b id="score">0</b></span><span>Nivel <b id="level">1</b>/3</span><span id="lives-wrap">Vidas: <b id="lives">3</b></span></div>
   <div id="stage"><canvas id="cv"></canvas></div>
   <div id="dpad">
     <button id="up" aria-label="Arriba">▲</button><div id="mid"></div>
@@ -105,26 +105,58 @@ cell = Math.max(20, Math.min(cell,36));
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 cv.width=COLS*cell; cv.height=ROWS*cell;
 
-function buildGrid(){
+const HOUSE_WALLS=[[5,6],[6,6],[7,6],[5,7],[7,7],[5,8],[7,8]];
+const LEVELS=[
+  { color:'#3a0000', tunnelRow:7,
+    walls:[[2,2],[3,2],[4,2],[8,2],[9,2],[10,2],
+      [2,12],[3,12],[4,12],[8,12],[9,12],[10,12],
+      [2,4],[2,5],[2,6],[10,4],[10,5],[10,6],
+      [2,8],[2,9],[2,10],[10,8],[10,9],[10,10]] },
+  { color:'#1a1a4d', tunnelRow:4,
+    walls:[[2,3],[3,3],[4,3],[8,3],[9,3],[10,3],
+      [2,11],[3,11],[4,11],[8,11],[9,11],[10,11],
+      [2,5],[2,6],[2,9],[2,10],
+      [10,5],[10,6],[10,9],[10,10]] },
+  { color:'#1a3a1a', tunnelRow:11,
+    walls:[[2,2],[2,3],[4,2],[4,3],[4,4],[8,2],[8,3],[8,4],[10,2],[10,3],
+      [2,11],[2,12],[4,10],[4,11],[4,12],[8,10],[8,11],[8,12],[10,11],[10,12],
+      [2,6],[10,6],[2,8],[10,8]] }
+];
+const FRUITS=['🍒','🍓','🍊'];
+const FRUIT_POINTS=[100,200,300];
+
+function buildGrid(levelDef){
   const g=[];
   for(let y=0;y<ROWS;y++){const row=[];
     for(let x=0;x<COLS;x++) row.push((x===0||y===0||x===COLS-1||y===ROWS-1)?'W':'D');
     g.push(row);
   }
-  const walls=[[2,2],[3,2],[4,2],[8,2],[9,2],[10,2],
-    [2,12],[3,12],[4,12],[8,12],[9,12],[10,12],
-    [2,4],[2,5],[2,6],[10,4],[10,5],[10,6],
-    [2,8],[2,9],[2,10],[10,8],[10,9],[10,10],
-    [5,6],[6,6],[7,6],[5,7],[7,7],[5,8],[7,8]];
-  walls.forEach(([x,y])=>g[y][x]='W');
+  levelDef.walls.forEach(([x,y])=>g[y][x]='W');
+  HOUSE_WALLS.forEach(([x,y])=>g[y][x]='W');
   g[7][6]='E'; g[11][6]='E';
+  g[levelDef.tunnelRow][0]='D'; g[levelDef.tunnelRow][COLS-1]='D';
   [[1,1],[11,1],[1,13],[11,13]].forEach(([x,y])=>g[y][x]='O');
   return g;
 }
-let grid=buildGrid();
-let dotsLeft=0;
-for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) if(grid[y][x]==='D'||grid[y][x]==='O') dotsLeft++;
-const canMove=(x,y)=> x>=0&&y>=0&&x<COLS&&y<ROWS && grid[y][x]!=='W';
+
+let currentLevel=1, TUNNEL_ROW=LEVELS[0].tunnelRow, wallColor=LEVELS[0].color;
+let grid=buildGrid(LEVELS[0]);
+let dotsLeft=0, totalDotsThisLevel=0;
+function countDots(){
+  let n=0;
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) if(grid[y][x]==='D'||grid[y][x]==='O') n++;
+  return n;
+}
+dotsLeft=totalDotsThisLevel=countDots();
+
+function wrapX(x,y){
+  if(y===TUNNEL_ROW){ if(x<0) return COLS-1; if(x>=COLS) return 0; }
+  return x;
+}
+const canMove=(x,y)=>{
+  const wx=wrapX(x,y);
+  return wx>=0&&y>=0&&wx<COLS&&y<ROWS && grid[y][wx]!=='W';
+};
 
 const DIRS={U:{x:0,y:-1},D:{x:0,y:1},L:{x:-1,y:0},R:{x:1,y:0},N:{x:0,y:0}};
 
@@ -139,9 +171,12 @@ const ghostDefs=[
   {color:'#ffb15b', pos:[6,6]}
 ];
 const ghosts=ghostDefs.map(d=>Object.assign(makeEntity(d.pos[0],d.pos[1],3.8),{color:d.color}));
+const fruit={active:false, gx:6, gy:9, timer:0, spawned1:false, spawned2:false};
 
-let score=0, eatenCount=0, scaredTimer=0, won=false, lost=false, lives=3, invulnTimer=0;
+let score=0, eatenCount=0, scaredTimer=0, won=false, lost=false, lives=3, invulnTimer=0, transitioning=false;
 const scoreEl=document.getElementById('score'), eatenEl=document.getElementById('eaten'), livesEl=document.getElementById('lives');
+const levelEl=document.getElementById('level');
+
 
 let audioCtx=null;
 function ensureAudio(){
@@ -207,12 +242,47 @@ cv.addEventListener('touchend',e=>{
 
 function eatAt(gx,gy){
   const c=grid[gy][gx];
-  if(c==='D'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; checkWin(); }
-  else if(c==='O'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; checkWin(); scaredTimer=7;
+  if(c==='D'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; maybeSpawnFruit(); checkWin(); }
+  else if(c==='O'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; maybeSpawnFruit(); checkWin(); scaredTimer=7;
     ghosts.forEach(g=>{ if(g.active) g.scared=true; }); }
 }
+function maybeSpawnFruit(){
+  const eaten = totalDotsThisLevel - dotsLeft;
+  if(!fruit.active && !fruit.spawned1 && eaten>=30){ fruit.active=true; fruit.timer=8; fruit.spawned1=true; }
+  else if(!fruit.active && fruit.spawned1 && !fruit.spawned2 && eaten>=70){ fruit.active=true; fruit.timer=8; fruit.spawned2=true; }
+}
+function playLevelClearJingle(){
+  if(!audioCtx) return;
+  const notes=[[659.25,0.14],[783.99,0.14],[987.77,0.14],[1174.66,0.4]];
+  let t=audioCtx.currentTime+0.05;
+  notes.forEach(([freq,dur])=>{ playNote(freq,t,dur*0.9,0.3); t+=dur; });
+}
+function loadLevel(n){
+  const lvl=LEVELS[n-1];
+  currentLevel=n; TUNNEL_ROW=lvl.tunnelRow; wallColor=lvl.color;
+  grid=buildGrid(lvl);
+  dotsLeft=totalDotsThisLevel=countDots();
+  fruit.active=false; fruit.spawned1=false; fruit.spawned2=false;
+  pac.gx=6; pac.gy=11; pac.dir=DIRS.N; pac.next=DIRS.N; pac.progress=0;
+  invulnTimer=1.2;
+  ghosts.forEach((g,i)=>{
+    g.gx=ghostDefs[i].pos[0]; g.gy=ghostDefs[i].pos[1]; g.dir=DIRS.N; g.progress=0;
+    g.active=true; g.scared=false; g.stepTime=1/(3.8*(1+0.12*(n-1)));
+  });
+  scaredTimer=0;
+  arriveTile(pac,true);
+  ghosts.forEach(g=>arriveTile(g,false));
+  if(levelEl) levelEl.textContent=n;
+}
 function checkWin(){
-  if(dotsLeft<=0 && !won){ won=true; pickPrize(); document.getElementById('overlay').style.display='flex'; launchConfetti(); playWinJingle(); }
+  if(dotsLeft<=0 && !won && !transitioning){
+    if(currentLevel<LEVELS.length){
+      transitioning=true; stopBgMusic(); playLevelClearJingle();
+      setTimeout(()=>{ loadLevel(currentLevel+1); transitioning=false; if(started) startBgMusic(); }, 2200);
+    } else {
+      won=true; pickPrize(); document.getElementById('overlay').style.display='flex'; launchConfetti(); playWinJingle();
+    }
+  }
 }
 const PRIZES=[
   "Pasta Térmica y Limpieza Interna Gratis",
@@ -283,11 +353,15 @@ function updateEntity(ent, dt, isPac){
   ent.progress += dt/ent.stepTime;
   if(ent.progress>=1){
     ent.progress=0;
-    ent.gx+=ent.dir.x; ent.gy+=ent.dir.y;
+    ent.gx=wrapX(ent.gx+ent.dir.x, ent.gy); ent.gy+=ent.dir.y;
     arriveTile(ent,isPac);
   }
 }
-function renderPos(ent){ return {x:(ent.gx+ent.dir.x*ent.progress+0.5)*cell, y:(ent.gy+ent.dir.y*ent.progress+0.5)*cell}; }
+function renderPos(ent){
+  let rx=ent.gx+ent.dir.x*ent.progress+0.5;
+  if(ent.gy===TUNNEL_ROW){ rx=((rx%COLS)+COLS)%COLS; }
+  return {x:rx*cell, y:(ent.gy+ent.dir.y*ent.progress+0.5)*cell};
+}
 
 let started=false;
 function startGame(){
@@ -299,11 +373,15 @@ let lastT=null;
 function loop(t){
   if(lastT===null) lastT=t;
   const dt=Math.min((t-lastT)/1000, 0.05); lastT=t;
-  if(started && !won && !lost){
+  if(started && !won && !lost && !transitioning){
     updateEntity(pac,dt,true);
     ghosts.forEach(g=>{ if(g.active) updateEntity(g,dt,false); });
     if(scaredTimer>0){ scaredTimer-=dt; if(scaredTimer<=0){ scaredTimer=0; ghosts.forEach(g=>g.scared=false); } }
     if(invulnTimer>0){ invulnTimer=Math.max(0,invulnTimer-dt); }
+    if(fruit.active){
+      fruit.timer-=dt;
+      if(fruit.timer<=0) fruit.active=false;
+    }
 
     const pp=renderPos(pac);
     let hitThisFrame=false;
@@ -311,12 +389,18 @@ function loop(t){
       if(!g.active || hitThisFrame) return;
       const gp=renderPos(g);
       if(Math.hypot(pp.x-gp.x,pp.y-gp.y) < cell*0.55){
-        if(g.scared){ g.active=false; eatenCount++; eatenEl.textContent=eatenCount;
+        if(g.scared){ g.active=false; eatenCount++; if(eatenEl) eatenEl.textContent=eatenCount;
         } else if(invulnTimer<=0){
           hitThisFrame=true; loseLife();
         }
       }
     });
+    if(fruit.active){
+      const fx=(fruit.gx+0.5)*cell, fy=(fruit.gy+0.5)*cell;
+      if(Math.hypot(pp.x-fx,pp.y-fy) < cell*0.6){
+        fruit.active=false; score+=FRUIT_POINTS[currentLevel-1]; scoreEl.textContent=score;
+      }
+    }
   }
   draw();
   requestAnimationFrame(loop);
@@ -326,7 +410,7 @@ function draw(){
   ctx.clearRect(0,0,cv.width,cv.height);
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
     const c=grid[y][x];
-    if(c==='W'){ ctx.fillStyle='#3a0000'; ctx.strokeStyle='#e2001a'; ctx.lineWidth=1;
+    if(c==='W'){ ctx.fillStyle=wallColor; ctx.strokeStyle='#e2001a'; ctx.lineWidth=1;
       ctx.fillRect(x*cell+1,y*cell+1,cell-2,cell-2); ctx.strokeRect(x*cell+1.5,y*cell+1.5,cell-3,cell-3); }
     else if(c==='D'){ ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(x*cell+cell/2,y*cell+cell/2,cell*0.06,0,7); ctx.fill(); }
     else if(c==='O'){ ctx.fillStyle='#e2001a'; ctx.beginPath();
@@ -364,6 +448,21 @@ function draw(){
       ctx.beginPath(); ctx.arc(gp.x-r*0.35+ex,gp.y-r*0.2+ey,r*0.1,0,7); ctx.arc(gp.x+r*0.35+ex,gp.y-r*0.2+ey,r*0.1,0,7); ctx.fill();
     }
   });
+
+  if(fruit.active){
+    ctx.font=(cell*0.85)+'px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(FRUITS[currentLevel-1], (fruit.gx+0.5)*cell, (fruit.gy+0.5)*cell+2);
+  }
+
+  if(transitioning){
+    ctx.fillStyle='rgba(0,0,0,.82)'; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='bold '+(cell*0.9)+'px sans-serif';
+    ctx.fillText('¡NIVEL '+currentLevel+' SUPERADO!', cv.width/2, cv.height/2-14);
+    ctx.fillStyle='#e2001a'; ctx.font=(cell*0.55)+'px sans-serif';
+    ctx.fillText('Preparando nivel '+(currentLevel+1)+'...', cv.width/2, cv.height/2+26);
+  }
 }
 
 function launchConfetti(){
