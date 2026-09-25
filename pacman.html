@@ -298,12 +298,26 @@ function checkWin(){
 const PRIZES=[
   "Pasta Térmica y Limpieza Interna Gratis",
   "Diagnóstico Gratis de tu PC",
-  "10% OFF en tu próximo service"
+  "10% OFF en tu próximo service",
+  "Actualización de Windows Gratis",
+  "Instalación de Antivirus Gratis",
+  "Backup de tus Archivos Gratis",
+  "Optimización de Arranque Gratis"
 ];
 let wonPrize="";
+function wrapPrizeText(text, maxLen){
+  const words = text.split(' ');
+  const lines = []; let line='';
+  words.forEach(w=>{
+    if((line+' '+w).trim().length > maxLen){ lines.push(line.trim()); line=w; }
+    else { line = (line+' '+w).trim(); }
+  });
+  if(line) lines.push(line);
+  return lines.join('<br>');
+}
 function pickPrize(){
   wonPrize = PRIZES[Math.floor(Math.random()*PRIZES.length)];
-  document.getElementById('prize-text').innerHTML = wonPrize.toUpperCase().replace(' Y ', ' Y<br>').replace(' EN ', ' EN<br>');
+  document.getElementById('prize-text').innerHTML = wrapPrizeText(wonPrize.toUpperCase(), 20);
 }
 function claimPrize(){
   const msg = 'Hola! Gané el juego de Pacman y quiero reclamar mi premio: '+wonPrize+' 🎉';
