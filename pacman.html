@@ -171,7 +171,7 @@ const ghostDefs=[
   {color:'#ffb15b', pos:[6,6]}
 ];
 const ghosts=ghostDefs.map(d=>Object.assign(makeEntity(d.pos[0],d.pos[1],3.8),{color:d.color}));
-const fruit={active:false, gx:6, gy:9, timer:0, spawned1:false, spawned2:false};
+const fruit=Object.assign(makeEntity(6,9,3.0), {active:false, timer:0, spawned1:false, spawned2:false, isFruit:true});
 
 let score=0, eatenCount=0, scaredTimer=0, won=false, lost=false, lives=3, invulnTimer=0, transitioning=false;
 const scoreEl=document.getElementById('score'), eatenEl=document.getElementById('eaten'), livesEl=document.getElementById('lives');
@@ -240,16 +240,27 @@ cv.addEventListener('touchend',e=>{
   touchStart=null;
 },{passive:true});
 
+let chompToggle=false;
+function playChomp(){
+  if(!audioCtx) return;
+  chompToggle=!chompToggle;
+  playNote(chompToggle?300:170, audioCtx.currentTime, 0.075, 0.16, 'square');
+}
 function eatAt(gx,gy){
   const c=grid[gy][gx];
-  if(c==='D'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; maybeSpawnFruit(); checkWin(); }
-  else if(c==='O'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; maybeSpawnFruit(); checkWin(); scaredTimer=7;
+  if(c==='D'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; playChomp(); maybeSpawnFruit(); checkWin(); }
+  else if(c==='O'){ grid[gy][gx]='E'; score++; scoreEl.textContent=score; dotsLeft--; playChomp(); maybeSpawnFruit(); checkWin(); scaredTimer=7;
     ghosts.forEach(g=>{ if(g.active) g.scared=true; }); }
+}
+function activateFruit(){
+  fruit.gx=6; fruit.gy=9; fruit.dir=DIRS.N; fruit.progress=0;
+  fruit.active=true; fruit.timer=10;
+  arriveTile(fruit,false);
 }
 function maybeSpawnFruit(){
   const eaten = totalDotsThisLevel - dotsLeft;
-  if(!fruit.active && !fruit.spawned1 && eaten>=30){ fruit.active=true; fruit.timer=8; fruit.spawned1=true; }
-  else if(!fruit.active && fruit.spawned1 && !fruit.spawned2 && eaten>=70){ fruit.active=true; fruit.timer=8; fruit.spawned2=true; }
+  if(!fruit.active && !fruit.spawned1 && eaten>=30){ activateFruit(); fruit.spawned1=true; }
+  else if(!fruit.active && fruit.spawned1 && !fruit.spawned2 && eaten>=70){ activateFruit(); fruit.spawned2=true; }
 }
 function playLevelClearJingle(){
   if(!audioCtx) return;
@@ -331,7 +342,9 @@ function arriveTile(ent, isPac){
       const nx=ent.gx+d.x, ny=ent.gy+d.y;
       return Math.hypot(nx-pac.gx, ny-pac.gy);
     };
-    if(ent.scared){
+    if(ent.isFruit){
+      pick = choices[Math.floor(Math.random()*choices.length)];
+    } else if(ent.scared){
       choices.sort((a,b)=>toPacDist(b)-toPacDist(a));
       pick = Math.random()<0.7 ? choices[0] : choices[Math.floor(Math.random()*choices.length)];
     } else {
@@ -379,6 +392,7 @@ function loop(t){
     if(scaredTimer>0){ scaredTimer-=dt; if(scaredTimer<=0){ scaredTimer=0; ghosts.forEach(g=>g.scared=false); } }
     if(invulnTimer>0){ invulnTimer=Math.max(0,invulnTimer-dt); }
     if(fruit.active){
+      updateEntity(fruit,dt,false);
       fruit.timer-=dt;
       if(fruit.timer<=0) fruit.active=false;
     }
@@ -396,9 +410,10 @@ function loop(t){
       }
     });
     if(fruit.active){
-      const fx=(fruit.gx+0.5)*cell, fy=(fruit.gy+0.5)*cell;
-      if(Math.hypot(pp.x-fx,pp.y-fy) < cell*0.6){
+      const fp=renderPos(fruit);
+      if(Math.hypot(pp.x-fp.x,pp.y-fp.y) < cell*0.6){
         fruit.active=false; score+=FRUIT_POINTS[currentLevel-1]; scoreEl.textContent=score;
+        scaredTimer=7; ghosts.forEach(g=>{ if(g.active) g.scared=true; });
       }
     }
   }
@@ -450,9 +465,10 @@ function draw(){
   });
 
   if(fruit.active){
+    const fp=renderPos(fruit);
     ctx.font=(cell*0.85)+'px sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(FRUITS[currentLevel-1], (fruit.gx+0.5)*cell, (fruit.gy+0.5)*cell+2);
+    ctx.fillText(FRUITS[currentLevel-1], fp.x, fp.y+2);
   }
 
   if(transitioning){
