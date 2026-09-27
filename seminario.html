@@ -147,6 +147,7 @@
   .tab-btn.active{ color: var(--ink); border-bottom-color: var(--gold); }
 
   .main{ flex: 1; padding: 1.75rem 2rem 4rem 2rem; min-width: 0; }
+  .greeting{ font-family: var(--serif); font-size: 1.4rem; margin: 0 0 1.25rem 0; }
   .empty{ color: var(--ink-soft); font-family: var(--serif); font-size: 1.1rem; padding: 3rem 0; }
 
   .class-meta{ color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 0.15rem 0; }
@@ -583,6 +584,10 @@ function renderNotAuthorized(){
   </div>`;
 }
 
+function firstName(name){
+  return (name || "").trim().split(/\s+/)[0] || "";
+}
+
 function renderShell(){
   const isTeacher = STATE.user.role === "profesor";
   return `
@@ -596,7 +601,10 @@ function renderShell(){
   </div>
   <div class="layout">
     ${isTeacher ? renderTeacherSidebar() : renderStudentSidebar()}
-    <div class="main">${isTeacher ? renderTeacherMain() : renderStudentMain()}</div>
+    <div class="main">
+      <p class="greeting">Hola 👋 ${escapeHtml(firstName(STATE.user.displayName))}</p>
+      ${isTeacher ? renderTeacherMain() : renderStudentMain()}
+    </div>
   </div>`;
 }
 
