@@ -761,7 +761,7 @@ function renderTeacherClasses(){
       <h3 class="class-title" style="font-size:1.35rem;">${escapeHtml(c.title)}</h3>
       ${c.description ? `<p class="class-desc">${escapeHtml(c.description)}</p>` : ""}
       ${c.videoUrl ? `<p class="form-note">Video: ${escapeHtml(c.videoUrl)}</p>` : ""}
-      ${c.manualUrl ? `<p class="form-note">Manual: ${escapeHtml(c.manualUrl)}</p>` : ""}
+      ${c.manualUrl ? `<p class="form-note">Manual: <a class="manual-link" href="${escapeHtml(c.manualUrl)}" target="_blank" rel="noopener">${escapeHtml(c.manualUrl)}</a></p>` : ""}
       <h4 style="font-family:var(--serif); font-weight:normal; margin: 1rem 0 0.4rem 0;">Actividades</h4>
       ${c.activities.map(a => `
         <div class="activity" style="padding:0.7rem 0;">
