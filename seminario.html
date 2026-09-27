@@ -286,6 +286,11 @@ function isTeacherEmail(email){
   return TEACHER_EMAILS.map(e => e.toLowerCase()).includes((email || "").toLowerCase());
 }
 
+function roleLabel(email){
+  if((email || "").toLowerCase() === "abacosdigitales@gmail.com") return "Administrador/Creador";
+  return "Maestro/a de Seminario";
+}
+
 /* ---------------- Firestore helpers ---------------- */
 async function getClasses(){
   try{ const doc = await db.collection("app").doc("classes").get(); return doc.exists ? (doc.data().list || []) : []; }
@@ -585,7 +590,7 @@ function renderShell(){
   <div class="topbar">
     <div class="brand">Campus de Seminario</div>
     <div class="who">
-      <span><span class="dot"></span><span class="name">${escapeHtml(STATE.user.displayName)}</span> · ${isTeacher ? "Profesor" : "Alumno"}</span>
+      <span><span class="dot"></span><span class="name">${escapeHtml(STATE.user.displayName)}</span> · ${isTeacher ? roleLabel(STATE.user.email) : "Alumno"}</span>
       <button class="link-btn" data-action="logout" style="color:var(--ink-soft)">Cerrar sesión</button>
     </div>
   </div>
@@ -845,7 +850,7 @@ function renderStudentDetail(profile, prog){
 }
 
 function renderTeacherAllowlist(){
-  const teacherRows = TEACHER_EMAILS.map(e => `<div class="allow-row"><span>${escapeHtml(e)}</span><span class="form-note">Profesor</span></div>`).join("");
+  const teacherRows = TEACHER_EMAILS.map(e => `<div class="allow-row"><span>${escapeHtml(e)}</span><span class="form-note">${escapeHtml(roleLabel(e))}</span></div>`).join("");
   const allowRows = STATE.allowlist.map(a => `
     <div class="allow-row">
       <span>${escapeHtml(a.email)}</span>
@@ -864,7 +869,7 @@ function renderTeacherAllowlist(){
       <h3 class="section-heading">Alumnos autorizados</h3>
       ${allowRows}
 
-      <h3 class="section-heading">Profesores</h3>
+      <h3 class="section-heading">Maestros y Maestras</h3>
       <p class="form-note">Se definen en el código (constante TEACHER_EMAILS), no acá.</p>
       ${teacherRows}
     </div>`;
