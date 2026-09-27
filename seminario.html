@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus de Seminario</title>
+<style>
+  :root{
+    --bg: #F6F1E7;
+    --surface: #FBF8F2;
+    --ink: #241F16;
+    --ink-soft: #6B6152;
+    --line: #DCD2B9;
+    --gold: #A9772F;
+    --gold-soft: #F1E3C6;
+    --teal: #33564A;
+    --teal-soft: #E1E9E3;
+    --rust: #8C3B2E;
+    --rust-soft: #F1DFDA;
+    --serif: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", Georgia, serif;
+    --sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  #app{ min-height: 100vh; }
+  .loading{ padding: 4rem 2rem; font-family: var(--serif); font-size: 1.2rem; color: var(--ink-soft); }
+
+  /* ---------- Auth screen ---------- */
+  .auth-wrap{
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 2rem 1.25rem;
+  }
+  .auth-card{
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+  .auth-title{
+    font-family: var(--serif);
+    font-size: 2rem;
+    line-height: 1.15;
+    margin: 0 0 0.15rem 0;
+  }
+  .auth-sub{
+    color: var(--ink-soft);
+    margin: 0 0 2rem 0;
+    font-size: 0.95rem;
+  }
+  .google-btn{
+    display:inline-flex; align-items:center; gap: 0.65rem;
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    padding: 0.65rem 1.4rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .google-btn:hover{ background: #fff; }
+  .not-auth-email{ font-family: var(--sans); color: var(--ink-soft); font-size: 0.9rem; margin: 0.6rem 0 1.6rem 0; }
+
+  label{ display:block; font-size: 0.85rem; color: var(--ink-soft); margin: 0.9rem 0 0.3rem 0; text-align:left; }
+  input[type=text], input[type=password], input[type=url], input[type=email], textarea, select{
+    width:100%;
+    font-family: var(--sans);
+    font-size: 0.98rem;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  textarea{ min-height: 4.5rem; resize: vertical; }
+  .btn{
+    font-family: var(--sans);
+    font-size: 0.92rem;
+    padding: 0.55rem 1.1rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .btn:hover{ opacity: 0.88; }
+  .btn.secondary{
+    background: transparent; color: var(--ink); border: 1px solid var(--line);
+  }
+  .btn.gold{ background: var(--gold); border-color: var(--gold); color: #fff; }
+  .btn.small{ font-size: 0.8rem; padding: 0.32rem 0.7rem; }
+  .link-btn{
+    background:none; border:none; padding:0; color: var(--rust); cursor:pointer;
+    font-size: 0.8rem; text-decoration: underline;
+  }
+  .form-actions{ margin-top: 1.4rem; text-align:left; }
+  .form-error{ color: var(--rust); font-size: 0.85rem; margin-top: 0.6rem; }
+  .form-note{ color: var(--ink-soft); font-size: 0.8rem; margin-top: 0.35rem; }
+
+  /* ---------- App shell ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .brand{ font-family: var(--serif); font-size: 1.25rem; }
+  .who{ display:flex; align-items:center; gap: 0.9rem; font-size: 0.85rem; color: var(--ink-soft); }
+  .who .name{ color: var(--ink); }
+  .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--gold); margin-right: 0.4rem; }
+
+  .layout{ display:flex; align-items:flex-start; max-width: 1100px; margin: 0 auto; }
+  .sidebar{
+    width: 260px; flex-shrink: 0;
+    border-right: 1px solid var(--line);
+    min-height: calc(100vh - 61px);
+    padding: 1.25rem 0;
+  }
+  .sidebar-heading{
+    padding: 0 1.25rem 0.6rem 1.25rem;
+    font-size: 0.82rem; color: var(--ink-soft);
+  }
+  .class-item{
+    display:flex; align-items:center; gap: 0.55rem;
+    padding: 0.65rem 1.25rem;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    font-size: 0.94rem;
+  }
+  .class-item:hover{ background: rgba(0,0,0,0.02); }
+  .class-item.active{ border-left-color: var(--gold); background: var(--gold-soft); }
+  .class-item .mark{ color: var(--teal); width: 1rem; text-align:center; flex-shrink:0; }
+  .tabs-teacher{ display:flex; gap: 0; border-bottom: 1px solid var(--line); padding: 0 1.25rem; }
+  .tabs-teacher .tab-btn{ padding: 0.75rem 0.9rem 0.7rem 0; }
+  .tab-btn{
+    background:none; border:none; cursor:pointer;
+    font-family: var(--sans); font-size: 0.95rem; color: var(--ink-soft);
+    padding: 0.5rem 0 0.75rem 0;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-btn.active{ color: var(--ink); border-bottom-color: var(--gold); }
+
+  .main{ flex: 1; padding: 1.75rem 2rem 4rem 2rem; min-width: 0; }
+  .empty{ color: var(--ink-soft); font-family: var(--serif); font-size: 1.1rem; padding: 3rem 0; }
+
+  .class-meta{ color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 0.15rem 0; }
+  .class-title{ font-family: var(--serif); font-size: 1.7rem; margin: 0 0 0.9rem 0; }
+  .class-desc{ line-height: 1.55; margin-bottom: 1.4rem; max-width: 62ch; }
+
+  .resource{ margin-bottom: 1.75rem; }
+  .video-embed{ position:relative; padding-top: 56.25%; border: 1px solid var(--line); background:#000; }
+  .video-embed iframe{ position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
+  .manual-link{
+    display:inline-block; margin-top: 0.5rem;
+    color: var(--ink); border-bottom: 1px solid var(--gold);
+    text-decoration:none; font-size: 0.95rem;
+  }
+
+  .section-heading{ font-family: var(--serif); font-size: 1.15rem; margin: 2rem 0 0.6rem 0; }
+
+  .activity{ border-top: 1px solid var(--line); padding: 1.1rem 0; }
+  .activity-type{ font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 0.35rem; }
+  .activity-prompt{ font-size: 1rem; margin: 0 0 0.7rem 0; max-width: 62ch; }
+  .option-row{ display:flex; align-items:center; gap:0.5rem; padding: 0.3rem 0; font-size: 0.94rem; }
+  .option-row input{ width:auto; }
+  .feedback-ok{ color: var(--teal); font-size: 0.88rem; margin-top: 0.5rem; }
+  .feedback-bad{ color: var(--rust); font-size: 0.88rem; margin-top: 0.5rem; }
+  .checklist-row{ display:flex; align-items:center; gap: 0.7rem; }
+  .teacher-del{ margin-left: 0.75rem; }
+
+  .newclass-box{
+    border: 1px solid var(--line); background: var(--surface);
+    padding: 1.25rem; margin-bottom: 2rem; max-width: 560px;
+  }
+  .newclass-box h3{ font-family: var(--serif); font-size: 1.15rem; margin: 0 0 0.9rem 0; font-weight: normal; }
+
+  table.progress-table{ border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  table.progress-table th, table.progress-table td{
+    border-bottom: 1px solid var(--line);
+    padding: 0.55rem 0.7rem; text-align: left;
+  }
+  table.progress-table th{ color: var(--ink-soft); font-weight: normal; }
+  .student-name-btn{ background:none; border:none; padding:0; cursor:pointer; color: var(--ink); text-decoration: underline; font-size: 0.9rem; }
+  .student-detail{ background: var(--surface); border: 1px solid var(--line); padding: 1rem 1.25rem; margin: 0.5rem 0 1.5rem 0; }
+  .student-detail h4{ font-family: var(--serif); font-weight: normal; margin: 0.8rem 0 0.3rem 0; font-size: 1rem; }
+  .student-detail p{ margin: 0.2rem 0; font-size: 0.88rem; }
+
+  .allow-row{ display:flex; align-items:center; justify-content:space-between; border-top: 1px solid var(--line); padding: 0.6rem 0; font-size: 0.92rem; max-width: 480px; }
+
+  .toast{
+    position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--bg); padding: 0.6rem 1.1rem;
+    border-radius: 3px; font-size: 0.85rem;
+  }
+
+  @media (max-width: 760px){
+    .layout{ flex-direction: column; }
+    .sidebar{ width: 100%; border-right: none; border-bottom: 1px solid var(--line); min-height:auto; }
+    .main{ padding: 1.25rem 1.1rem 3rem 1.1rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============================================================
+   Campus de Seminario — login exclusivo con Google (Firebase Auth)
+   y datos guardados en Firestore.
+
+   ANTES DE USAR, completa estos DOS puntos:
+
+   1) Pegá acá abajo el firebaseConfig que te da la consola de Firebase
+      (Configuración del proyecto > Tus apps > Config). Son datos
+      públicos, no una clave secreta.
+
+   2) Agregá tu email (y el de otros profesores, si hay) a TEACHER_EMAILS.
+      Esas cuentas de Google siempre entran con rol de Profesor.
+      Los alumnos entran solo si vos los agregaste antes desde la
+      pestaña "Alumnos autorizados" del panel de Profesor.
+   ============================================================ */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDx0h-pgLyL1gg1TZAs_PqieZiNkFhn3kw",
+  authDomain: "seminario-e31cd.firebaseapp.com",
+  projectId: "seminario-e31cd",
+  storageBucket: "seminario-e31cd.firebasestorage.app",
+  messagingSenderId: "763763118042",
+  appId: "1:763763118042:web:b63c7a61aaa4f545f6fae3"
+};
+
+const TEACHER_EMAILS = [
+  "eliana.terapias.et@gmail.com"
+];
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Lecciones del Manual del alumno de Seminario 2026 (Antiguo Testamento)
+const OT_LESSONS = [{"title": "Introducción al Antiguo Testamento: Manual del alumno de Seminario A medida que estudies diligentemente", "description": "Introducción al Antiguo Testamento: Manual del alumno de Seminario A medida que estudies diligentemente las lecciones de este curso, tendrás oportunidades de profundizar tu relación con Jesucristo y el Padre Celestial. Tu estudio del Antiguo Testamento te proporcionará una base de comprensión de las Escrituras.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/00-intro/001-introduction-to-the-old-testament-seminary-student-manual?lang=spa"}, {"title": "El estudio de las Escrituras Esta es una guía para ayudarte a aprender…", "description": "El estudio de las Escrituras Esta es una guía para ayudarte a aprender cómo estudiar las Escrituras.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/00-intro/002-studying-the-scriptures?lang=spa"}, {"title": "Marcar tus Escrituras Esta es una guía para ayudarte a aprender a marc…", "description": "Marcar tus Escrituras Esta es una guía para ayudarte a aprender a marcar tu ejemplar de las Escrituras y a recordar lo que Dios te dice.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/00-intro/003-marking-your-scriptures?lang=spa"}, {"title": "Introducción al Antiguo Testamento Nosotros creemos que Dios es nuestr…", "description": "Introducción al Antiguo Testamento Nosotros creemos que Dios es nuestro Padre Celestial.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/01-welcome/011-introduction?lang=spa"}, {"title": "El Plan de Salvación: El Salvador es fundamental en el plan del Padre Jehová fue elegido para", "description": "El Plan de Salvación: El Salvador es fundamental en el plan del Padre Jehová fue elegido para ser nuestro Salvador y Redentor. Él es el camino que lleva al Padre Celestial. Al seguirlo, llegamos a ser más como Él.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/01-welcome/012-the-plan-of-salvation?lang=spa"}, {"title": "Abraham 3", "description": "Abraham 3: La vida preterrenal En una visión, Jehová (Jesucristo) le mostró a Abraham nuestra existencia como espíritus \"antes que existiera el mundo\".", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/02-moses-1-abraham-3/021-abraham-3?lang=spa"}, {"title": "Moisés 1", "description": "Moisés 1:1-11: \"Tengo una obra para ti [.], hijo mío\" Dios dijo a Moisés: \"Tú eres mi hijo\" y \"tengo una obra para ti\".", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/02-moses-1-abraham-3/022-moses-1?lang=spa"}, {"title": "Moisés 1:12–26", "description": "Moisés 1:12-26: \"Vete de aquí, Satanás\" Moisés aprendió una manera en que podemos fortalecernos en contra de la tentación. Si recordamos nuestra verdadera identidad podemos obtener fortaleza de Dios para vencer la tentación.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/02-moses-1-abraham-3/023-moses-1-12-26?lang=spa"}, {"title": "Moisés 1:27–42", "description": "Moisés 1:27-42: \"Esta es mi obra y mi gloria\" Bajo la dirección del Padre Celestial, Jesucristo ha creado innumerables mundos, y las creaciones más preciadas del Padre Celestial son Sus hijos e hijas procreados en espíritu.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/02-moses-1-abraham-3/024-moses-1-27-42?lang=spa"}, {"title": "Génesis 1:1–25", "description": "Génesis 1:1-25: La Creación La impresionante belleza de nuestro mundo es evidencia de sus gloriosos Creadores, el Padre Celestial y Jesucristo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/03-genesis-1-2-moses-2-3-abraham-4-5/031-genesis-1-1-25?lang=spa"}, {"title": "Génesis 1:26–27", "description": "Génesis 1:26-27: \"Creó Dios al hombre a su imagen\" La creación de la mujer y el hombre por parte de Dios enseña que cada persona en la tierra es una hija o un hijo amado de padres celestiales.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/03-genesis-1-2-moses-2-3-abraham-4-5/032-genesis-1-26-27?lang=spa"}, {"title": "Génesis 1:28–31–2–1–25", "description": "Génesis 1:28-31; 2:1-25: \"La familia es fundamental en el plan del Creador\" Después de la creación de Adán y Eva, el Padre Celestial los unió en matrimonio, les mandó multiplicarse, henchir la tierra y allegarse el uno al otro.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/03-genesis-1-2-moses-2-3-abraham-4-5/033-genesis-1-28-31-2-1-25?lang=spa"}, {"title": "Moisés 4:1–4", "description": "Moisés 4:1-4: \"Hágase tu voluntad, y sea tuya la gloria para siempre\" En la vida preterrenal, el Padre Celestial escogió a Jesucristo para que fuera el Salvador en Su plan. Jesucristo obedece constantemente la voluntad del Padre Celestial.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/04-genesis-3-4-moses-4-5/041-moses-4-1-4?lang=spa"}, {"title": "Moisés 4:5–32–5–1–15–1", "description": "Moisés 4:5-32; 5:1-15, Parte 1: \"Fueron abiertos los ojos de ambos\" \"La Caída formaba parte esencial del plan divino del Padre Celestial; sin ella, Adán y Eva no habrían tenido hijos mortales, y no habría habido ninguna familia humana\".", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/04-genesis-3-4-moses-4-5/042-moses-4-5-32-5-1-15-part-1?lang=spa"}, {"title": "Moisés 4:5–2", "description": "Moisés 4:5-32; 5:1-15, Parte 2: \"Así como has caído puedas ser redimido\" La caída de Adán y Eva les haría experimentar la muerte física y la muerte espiritual (pecado). A pesar de eso, un amoroso Padre Celestial envió a un Salvador para vencer los efectos de la Caída.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/04-genesis-3-4-moses-4-5/043-moses-4-5-part-2?lang=spa"}, {"title": "Moisés 6:1–39", "description": "Moisés 6:1-39: El llamamiento de Enoc Enoc no se sintió apto cuando fue llamado a predicar el arrepentimiento. El Señor lo fortaleció para que lograse lo que él pensaba que no podía hacer.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/05-genesis-5-moses-6/051-moses-6-1-39?lang=spa"}, {"title": "Moisés 6:47–68", "description": "Moisés 6:47-68: \"Este es el Plan de Salvación\" Jesucristo está en el centro del Plan de Salvación del Padre Celestial e invita a todos a acudir a Él al vivir Su doctrina.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/05-genesis-5-moses-6/052-moses-6-47-68?lang=spa"}, {"title": "Práctica 1 del Dominio de la doctrina: Memorizar y poner en práctica los principios de la adquisición", "description": "Práctica 1 del Dominio de la doctrina: Memorizar y poner en práctica los principios de la adquisición de conocimiento espiritual El Dominio de la doctrina puede ayudarte a edificar tus cimientos sobre Jesucristo y Su Evangelio.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/05-genesis-5-moses-6/053-doctrinal-mastery-practice-1?lang=spa"}, {"title": "Moisés 7:1–21", "description": "Moisés 7:1-21: \"El Señor llamó Sion a su pueblo\" Sion es una sociedad en la que no existe la pobreza ni la violencia.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/06-moses-7/061-moses-7-1-21?lang=spa"}, {"title": "Moisés 7:22–47", "description": "Moisés 7:22-47: La visión de Enoc Dios es un padre amoroso que desea y espera que Sus hijos regresen a salvo a casa.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/06-moses-7/062-moses-7-22-47?lang=spa"}, {"title": "Moisés 7:53–69", "description": "Moisés 7:53-69: El Rey de Sion preservará a Su pueblo Uno de los títulos del Salvador es \"el Rey de Sion\". Él vela por Su pueblo y en los últimos días lo preservará de las grandes tribulaciones que ocurrirán.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/06-moses-7/063-moses-7-53-69?lang=spa"}, {"title": "Moisés 8", "description": "Moisés 8: Seguir al Salvador en un mundo inicuo El Padre Celestial ayuda a Sus hijos a buscar la rectitud y a vencer la iniquidad del mundo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/07-genesis-6-11-moses-8/071-moses-8?lang=spa"}, {"title": "Génesis 6:8", "description": "Génesis 6-8: \"Hizo Noé [...] todo lo que le mandó Jehová\" Hizo Noé [...", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/07-genesis-6-11-moses-8/072-genesis-6-8?lang=spa"}, {"title": "Evalúa tu aprendizaje 1: Moisés 1-Génesis 11 Reflexionar sobre tu aprendizaje espiritual y", "description": "Evalúa tu aprendizaje 1: Moisés 1-Génesis 11 Reflexionar sobre tu aprendizaje espiritual y evaluarlo puede ayudarte a acercarte más al Salvador.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/07-genesis-6-11-moses-8/073-assess-your-learning-1?lang=spa"}, {"title": "Abraham 1", "description": "Abraham 1: \"Deseando [...] ser un seguidor [...] de la rectitud\" Abraham buscó la rectitud en tiempos de adversidad y el Señor lo bendijo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/08-genesis-12-17-abraham-1-2/081-abraham-1?lang=spa"}, {"title": "Génesis 12:17", "description": "Génesis 12; 17: El convenio abrahámico El Señor estableció un convenio con Abraham con promesas y bendiciones que también están a nuestro alcance.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/08-genesis-12-17-abraham-1-2/082-genesis-12-17?lang=spa"}, {"title": "Abraham 2", "description": "Abraham 2:9-11: Nuestras responsabilidades en el convenio abrahámico Parte de nuestra responsabilidad dentro del convenio abrahámico es llevar las bendiciones del Evangelio a toda la tierra.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/08-genesis-12-17-abraham-1-2/083-abraham-2?lang=spa"}, {"title": "Génesis 15:18–21", "description": "Génesis 15-18; 21: \"Hizo Jehová [...] como había hablado\" Podemos confiar en que el Señor siempre cumplirá Sus promesas.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/09-genesis-18-23/091-genesis-15-18-21?lang=spa"}, {"title": "Génesis 19", "description": "Génesis 19: \"No mires tras ti\" Las iniquidades que rodeaban a Lot y su familia en la ciudad de Sodoma influyeron en ellos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/09-genesis-18-23/092-genesis-19?lang=spa"}, {"title": "Génesis 22", "description": "Génesis 22: Una semejanza de Jesucristo Dios probó a Abraham al mandarle que sacrificara a su hijo, Isaac. Esto puede verse como una semejanza del sacrificio de Jesucristo por nosotros.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/09-genesis-18-23/093-genesis-22?lang=spa"}, {"title": "Práctica del Dominio de la doctrina 2: Comprender la doctrina y adquirir conocimiento espiritual", "description": "Práctica del Dominio de la doctrina 2: Comprender la doctrina y adquirir conocimiento espiritual Esta lección puede ayudarte a comprender las verdades que se enseñan en los pasajes del Dominio de la doctrina y a poner en práctica los principios concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/09-genesis-18-23/094-doctrinal-mastery?lang=spa"}, {"title": "Génesis 24", "description": "Génesis 24: La bendición del matrimonio por convenio El Señor preparó el camino para que Isaac recibiera un matrimonio eterno por convenio y puede hacer lo mismo por nosotros.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/10-genesis-24-33/101-genesis-24?lang=spa"}, {"title": "Génesis 25:27", "description": "Génesis 25-27: Jacob y Esaú Isaac y Rebeca oraron durante muchos años antes de que Dios los bendijera con hijos. Esaú vendió su primogenitura a Jacob por un plato de guisado de lentejas.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/10-genesis-24-33/102-genesis-25-27?lang=spa"}, {"title": "Génesis 28", "description": "Génesis 28: Convenios con el Señor Jacob huye de Esaú y tiene una visión que lo lleva a entrar en el convenio abrahámico con Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/10-genesis-24-33/103-genesis-28?lang=spa"}, {"title": "Génesis 29:33", "description": "Génesis 29-33: \"Que Dios prevalezca\" Jacob se reconcilia con Esaú y se esfuerza por casarse dentro del convenio y dejar que Dios prevalezca en su vida.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/10-genesis-24-33/104-genesis-29-33?lang=spa"}, {"title": "Génesis 37:41", "description": "Génesis 37-41: \"Mas Jehová estaba con José\" José de Egipto fue vendido como esclavo por sus hermanos y acusado falsamente por la esposa de Potifar, pero permaneció fiel y confió en Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/11-genesis-37-41/111-genesis-37-41?lang=spa"}, {"title": "Génesis 39", "description": "Génesis 39: Vencer la tentación José resistió la tentación de la esposa de Potifar. Al igual que él, podemos resistir la tentación de quebrantar la ley de castidad con la ayuda del Salvador.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/11-genesis-37-41/112-genesis-39?lang=spa"}, {"title": "Génesis 42:45", "description": "Génesis 42-45: \"Yo soy José, vuestro hermano\" Cuando José se reunió con sus hermanos, quienes lo habían maltratado, él eligió extenderles misericordia y perdón.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/12-genesis-42-50/121-genesis-42-45?lang=spa"}, {"title": "Traducción de José Smith, Génesis 50: \"El Señor mi Dios levantará a un vidente\"", "description": "Traducción de José Smith, Génesis 50: \"El Señor mi Dios levantará a un vidente\" José de Egipto tuvo una visión de los últimos días, que incluyó la restauración del Evangelio por medio de José Smith.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/12-genesis-42-50/122-jst-genesis-50?lang=spa"}, {"title": "Evalúa tu aprendizaje 2: Génesis 12-50; Abraham 1-2 Esta lección tiene el objetivo de ayudarte", "description": "Evalúa tu aprendizaje 2: Génesis 12-50; Abraham 1-2 Esta lección tiene el objetivo de ayudarte a reflexionar sobre las metas que te has fijado y el progreso que has experimentado durante tu estudio de Génesis 12-50 y Abraham 1-2.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/12-genesis-42-50/123-assess-your-learning-2?lang=spa"}, {"title": "Éxodo 1", "description": "Éxodo 1: Honrar a Dios ante la oposición Faraón mandó a las parteras que mataran a los hijos israelitas al nacer, pero ellas se negaron a hacerlo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/13-exodus-1-6/131-exodus-1?lang=spa"}, {"title": "Éxodo 2:4", "description": "Éxodo 2-4: \"Yo estaré en tu boca\" Los israelitas experimentaron dificultades en el cautiverio y clamaron al Señor, quien escuchó sus clamores y llamó a Moisés como profeta para ayudarlos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/13-exodus-1-6/132-exodus-2-4?lang=spa"}, {"title": "Éxodo 5:6", "description": "Éxodo 5-6: Hacer la voluntad del Señor, sin importar el resultado Después de que el Señor lo llamó a liberar a Israel del cautiverio en Egipto, Moisés pidió a Faraón que dejara ir al pueblo del Señor. El resultado puso a prueba tanto la fe de Moisés, como la de los israelitas.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/13-exodus-1-6/133-exodus-5-6?lang=spa"}, {"title": "Pascua de ResurrecciónLección de Pascua de Resurrección Esta lección p…", "description": "Pascua de ResurrecciónLección de Pascua de Resurrección Esta lección puede ayudar a los alumnos a reflexionar sobre la paz y la esperanza que Jesucristo les ofrece.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/71-easter/711-easter?lang=spa"}, {"title": "Éxodo 7:11", "description": "Éxodo 7-11: Reconocer el poder del Señor El Señor seleccionó a Moisés y a Aarón para mostrar Su poder a Faraón, pero este desestimó el poder del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/14-exodus-7-13/141-exodus-7-11?lang=spa"}, {"title": "Éxodo 12:13–1", "description": "Éxodo 12-13, Parte 1: La Pascua de Jehová Los israelitas necesitaban la ayuda de Jehová para que los librara del cautiverio egipcio, pero en el plan del Padre Celestial, todas las personas necesitan ser salvadas. La Pascua simboliza la capacidad del Salvador para liberar a todo Su pueblo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/14-exodus-7-13/142-exodus-12-13-part-1?lang=spa"}, {"title": "Éxodo 12:13–2", "description": "Éxodo 12-13, Parte 2: \"Haced esto en memoria de mí\" A fin de ayudar a los hijos de Israel a recordar que Él los liberó de Egipto, el Señor instituyó la Pascua. Durante Su vida terrenal, Jesucristo instituyó la Santa Cena, que era una nueva manera de recordarlo siempre.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/14-exodus-7-13/143-exodus-12-13-part-2?lang=spa"}, {"title": "Práctica 3 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios", "description": "Práctica 3 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a memorizar las frases clave de los pasajes del Dominio de la doctrina, así como a poner en práctica los principios divinos concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/14-exodus-7-13/144-doctrinal-mastery-practice-3?lang=spa"}, {"title": "Éxodo 14", "description": "Éxodo 14: \"No temáis\" Así como los israelitas confiaron en Dios para ser librados de los egipcios al atravesar el Mar Rojo, tú puedes poner tu confianza en el Señor para recibir fortaleza y liberación.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/15-exodus-14-18/151-exodus-14?lang=spa"}, {"title": "Éxodo 15:17", "description": "Éxodo 15; 17: Reconocer las verdades de Dios en las Escrituras Dios utilizó la necesidad que los israelitas tenían de agua y ayuda en la batalla para enseñarles a ellos y a nosotros. Podemos aprender a poner en práctica en nuestra vida las verdades espirituales que se encuentran en los relatos de las Escrituras.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/15-exodus-14-18/152-exodus-15-17?lang=spa"}, {"title": "Éxodo 16", "description": "Éxodo 16: El pan de cada día Después de que el Señor liberó a Su pueblo de Egipto, ellos necesitaban confiar en Él para satisfacer sus necesidades diarias.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/15-exodus-14-18/153-exodus-16?lang=spa"}, {"title": "Éxodo 19", "description": "Éxodo 19: \"Mi especial tesoro\" Después de sacar a los hijos de Israel de Egipto, el Señor los llevó al monte Sinaí para que hicieran convenios con Él.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/16-exodus-19-20-24-31-34/161-exodus-19?lang=spa"}, {"title": "Éxodo 20:1–11", "description": "Éxodo 20:1-11: Los Diez Mandamientos: Amar a Dios y ponerlo a Él en primer lugar en nuestra vida Después de liberar a los israelitas de Egipto, el Señor los guio al monte Sinaí para hacer un convenio con Él. Allí reveló los Diez Mandamientos para ayudarlos a amarlo a Él más que a cualquier otra cosa.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/16-exodus-19-20-24-31-34/162-exodus-20-1-11?lang=spa"}, {"title": "Éxodo 20:12–17", "description": "Éxodo 20:12-17: Los Diez Mandamientos nos ayudan a amar a Dios y al prójimo Cuando los hijos de Israel estaban acampando junto al monte Sinaí, el Señor les reveló los Diez Mandamientos. Demostramos nuestro amor por Dios y por los demás cuando guardamos los Diez Mandamientos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/16-exodus-19-20-24-31-34/163-exodus-20-12-17?lang=spa"}, {"title": "Éxodo 24:31–34", "description": "Éxodo 24; 32-34: La justicia, la misericordia y la longanimidad del Señor Cuando Moisés regresó de la presencia del Señor, descubrió que los israelitas habían quebrantado los convenios que habían hecho. Esta lección puede ayudarte a comprender que el Señor es justo, misericordioso y longánimo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/16-exodus-19-20-24-31-34/164-exodus-24-31-34?lang=spa"}, {"title": "Éxodo 25:35–40", "description": "Éxodo 25; 35-40: \"La gloria de Jehová llenó el tabernáculo\" El Señor mandó a los israelitas construir un tabernáculo en el desierto. Esta lección puede ayudarte a comprender cómo el simbolismo del tabernáculo y de los templos modernos pueden enseñarte acerca de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/17-exodus-35-40-leviticus-1-4-16-19/171-exodus-25-35-40?lang=spa"}, {"title": "Levítico 1", "description": "Levítico, Parte 1: \"Esto es una semejanza\" El antiguo Israel sacrificaba animales. Eso ayudaba al pueblo a comprender lo que el Salvador había prometido hacer por ellos. Estudiar esos sacrificios puede ayudarnos a apreciar lo que el Salvador hizo por nosotros.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/17-exodus-35-40-leviticus-1-4-16-19/172-leviticus-part-1?lang=spa"}, {"title": "Levítico 2", "description": "Levítico, Parte 2: Sacrificarse por el Señor El antiguo Israel realizaba rituales que simbolizaban a Jesucristo y Su Expiación. Uno de esos rituales era el sacrificio de holocaustos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/17-exodus-35-40-leviticus-1-4-16-19/173-leviticus-part-2?lang=spa"}, {"title": "Evalúa tu aprendizaje 3: Éxodo y Levítico Esta lección puede ayudarte a reflexionar sobre las", "description": "Evalúa tu aprendizaje 3: Éxodo y Levítico Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio reciente del Antiguo Testamento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/17-exodus-35-40-leviticus-1-4-16-19/174-assess-your-learning-3?lang=spa"}, {"title": "Números 11:14", "description": "Números 11-14: Escoger la fe en lugar del temor Jehová guio a los israelitas hasta la frontera de la tierra prometida. Mandó a Moisés que enviara doce hombres a explorar la tierra. Caleb y Josué tenían fe en que el Señor los ayudaría.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/18-numbers-11-14-21/181-numbers-11-14?lang=spa"}, {"title": "Números 21", "description": "Números 21: Acudir al Salvador con fe Mientras los hijos de Israel continuaban avanzando por el desierto, se quejaron del Señor. La historia de la serpiente de bronce fue un poderoso recordatorio de la necesidad que tenían de acudir a Él para sanar tanto espiritual como físicamente.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/18-numbers-11-14-21/182-numbers-21?lang=spa"}, {"title": "Deuteronomio 6:1–6", "description": "Deuteronomio 6:1-6: Amar a Dios con todo tu corazón Después de guiar a los israelitas durante cuarenta años por el desierto, Moisés compartió con ellos su último consejo antes de que el Señor mandara a Josué a conducirlos a la tierra prometida.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/19-deuteronomy-6-34/191-deuteronomy-6-1-6?lang=spa"}, {"title": "Deuteronomio 6:8", "description": "Deuteronomio 6:6-25; 7:1-26; 8:1-20: \"Acuérdate de Jehová tu Dios\" Cuando los israelitas se acercaban a la tierra prometida, Moisés les advirtió que la comodidad podría tentarlos a olvidarse de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/19-deuteronomy-6-34/192-deuteronomy-6-8?lang=spa"}, {"title": "Deuteronomio 15", "description": "Deuteronomio 15: \"Abrirás a él tu mano liberalmente\" Los mandamientos del Salvador a los israelitas en Deuteronomio incluyen perdonar a los deudores, liberar a las personas en servidumbre y aliviar la carga de los pobres.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/19-deuteronomy-6-34/193-deuteronomy-15?lang=spa"}, {"title": "Josué 1", "description": "Josué 1: El Señor no nos fallará ni nos abandonará Así como Josué condujo a Israel a la tierra prometida con valor, nosotros también podemos afrontar los desafíos con confianza, sabiendo que el Señor no nos fallará ni nos abandonará.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/20-joshua-1-24/201-joshua-1?lang=spa"}, {"title": "Josué 2:4", "description": "Josué 2-4: Ejercer fe en Jesucristo El Señor mandó a Josué que guiara a los hijos de Israel a la tierra prometida. Los hijos de Israel y una mujer llamada Rahab demostraron su fe en el Salvador.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/20-joshua-1-24/202-joshua-2-4?lang=spa"}, {"title": "Josué 23:24", "description": "Josué 23-24: \"Escogeos hoy\" Esta lección puede ayudarte a escoger servir al Señor por encima de otras influencias, tal como hizo Josué.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/20-joshua-1-24/203-joshua-23-24?lang=spa"}, {"title": "Práctica 4 del Dominio de la doctrina: Poner en práctica los principios concernientes a la", "description": "Práctica 4 del Dominio de la doctrina: Poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección te ayudará a poner en práctica las verdades que se encuentran en los pasajes del Dominio de la doctrina, y a aprender y poner en práctica los principios concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/20-joshua-1-24/204-doctrinal-mastery-practice-4?lang=spa"}, {"title": "Jueces 2:4", "description": "Jueces 2-4: Acudir al Señor para ser librados Abraham buscó la rectitud en tiempos de adversidad y el Señor lo bendijo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/21-judges-2-4-judges-6-8/205-judges-2-4?lang=spa"}, {"title": "Jueces 6:8", "description": "Jueces 6-8: \"Ciertamente yo estaré contigo\" El Señor demostró Su fuerza al ayudar a los israelitas a derrotar a un ejército. Esta lección puede ayudarte a sentir un mayor deseo de confiar en Jesucristo para obtener fortaleza.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/21-judges-2-4-judges-6-8/206-judges-6-8?lang=spa"}, {"title": "Evalúa tu aprendizaje 4: Números-Jueces Esta lección tiene como objetivo ayudarte a reflexionar", "description": "Evalúa tu aprendizaje 4: Números-Jueces Esta lección tiene como objetivo ayudarte a reflexionar sobre las metas que te has fijado y el progreso que has experimentado durante tu estudio reciente del Antiguo Testamento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/21-judges-2-4-judges-6-8/207-assess-your-learning-4?lang=spa"}, {"title": "Rut 1:4", "description": "Rut 1-4: \"Y tu remuneración sea completa de parte de Jehová\" El relato de Rut, Noemí y Booz simboliza la función de Jesucristo como nuestro Redentor personal. Esta lección puede ayudarte a confiar en Jesucristo y en Su poder redentor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/22-ruth-1-samuel-1-7/208-ruth-1-4?lang=spa"}, {"title": "Samuel 1: \"Jehová me dio lo que le pedí\"", "description": "Samuel 1: \"Jehová me dio lo que le pedí\" Ana anhelaba tener un hijo. Ella continuó actuando con fe y suplicando al Padre Celestial esa bendición. Esta lección puede ayudarte a comprender que el Padre Celestial escucha tus humildes oraciones y te bendice.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/22-ruth-1-samuel-1-7/209-1-samuel-1?lang=spa"}, {"title": "Samuel 3: \"Habla, Jehová, que tu siervo escucha\"", "description": "Samuel 3: \"Habla, Jehová, que tu siervo escucha\" El Señor también nos habla a nosotros y, al igual que Samuel, debemos aprender a reconocer Su voz. Esta lección puede ayudarte a buscar y reconocer la revelación personal.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/22-ruth-1-samuel-1-7/210-1-samuel-3?lang=spa"}, {"title": "Samuel 8: Israel desea tener un rey Durante muchos años en la tierra prometida, Jehová preparó", "description": "Samuel 8: Israel desea tener un rey Durante muchos años en la tierra prometida, Jehová preparó jueces como Samuel para dirigir a Israel. En lugar de que Jehová reinara sobre ellos, los israelitas querían un tipo de líder diferente.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/23-1-samuel-8-16/211-1-samuel-8?lang=spa"}, {"title": "Samuel 15: Esforzarse por guardar todos Sus mandamientos de Dios Las acciones de Saúl y su", "description": "Samuel 15: Esforzarse por guardar todos Sus mandamientos de Dios Las acciones de Saúl y su ejército muestran algunas de las posibles consecuencias de la desobediencia. Esta lección puede ayudarte a comprender la importancia de esforzarte por obedecer todos los mandamientos de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/23-1-samuel-8-16/212-1-samuel-15?lang=spa"}, {"title": "Samuel 16: \"Jehová mira el corazón\"", "description": "Samuel 16: \"Jehová mira el corazón\" Las acciones de Saúl y su ejército muestran algunas de las posibles consecuencias de la desobediencia. Esta lección puede ayudarte a comprender la importancia de esforzarte por obedecer todos los mandamientos de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/23-1-samuel-8-16/213-1-samuel-16?lang=spa"}, {"title": "Samuel 17: David y Goliat David sabía que Jehová estaría con él cuando se enfrentó a Goliat,", "description": "Samuel 17: David y Goliat David sabía que Jehová estaría con él cuando se enfrentó a Goliat, y eso marcó la diferencia. Hoy en día, podemos hallar fortaleza en nuestros desafíos si los afrontamos con Jesucristo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/24-1-samuel-17-26-2-samuel-5-7/214-1-samuel-17?lang=spa"}, {"title": "Samuel 25: El Salvador nos ayuda a perdonar Un hombre llamado Nabal insultó a David. Abigail,", "description": "Samuel 25: El Salvador nos ayuda a perdonar Un hombre llamado Nabal insultó a David. Abigail, la esposa de Nabal, intervino para facilitar que lo perdonara. Al comparar las acciones de Abigail con las de Jesucristo, aprendemos cuán poderoso puede ser el perdón.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/24-1-samuel-17-26-2-samuel-5-7/215-1-samuel-25?lang=spa"}, {"title": "Práctica 5 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios", "description": "Práctica 5 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a memorizar las frases clave de los pasajes del Dominio de la doctrina. También puede ayudarte a poner en práctica los principios divinos concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/24-1-samuel-17-26-2-samuel-5-7/216-doctrinal-mastery-practice-5?lang=spa"}, {"title": "Samuel 11-12: No podemos ocultar nuestros pecados del Señor Esta lección puede ayudarte a reconocer", "description": "Samuel 11-12: No podemos ocultar nuestros pecados del Señor Esta lección puede ayudarte a reconocer que no puedes esconder tus pecados del Señor, pero que puedes acudir a Él para vencer la tentación.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/25-2-samuel-1-kings/217-2-samuel-11-12?lang=spa"}, {"title": "Reyes 3: El Señor nos bendice para llevar a cabo Su obra Salomón fue designado por Jehová para", "description": "Reyes 3: El Señor nos bendice para llevar a cabo Su obra Salomón fue designado por Jehová para ser el rey de Israel. Deseando honrar a Jehová, Salomón buscó sabiduría para servirle a Él y a los israelitas con rectitud.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/25-2-samuel-1-kings/218-1-kings-3?lang=spa"}, {"title": "Reyes 6-9: Salomón edifica la Casa del Señor Con la construcción del Templo de Salomón, los", "description": "Reyes 6-9: Salomón edifica la Casa del Señor Con la construcción del Templo de Salomón, los israelitas finalmente tenían una Casa del Señor permanente. El templo era un lugar donde el Salvador mismo moraría.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/25-2-samuel-1-kings/219-1-kings-6-9?lang=spa"}, {"title": "Evalúa tu aprendizaje 5: Rut-1 Reyes Esta lección puede ayudarte a reflexionar sobre las metas", "description": "Evalúa tu aprendizaje 5: Rut-1 Reyes Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio reciente del Antiguo Testamento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/25-2-samuel-1-kings/220-assess-your-learning-5?lang=spa"}, {"title": "Reyes 17: \"Ella fue e hizo como le dijo Elías\"", "description": "Reyes 17: \"Ella fue e hizo como le dijo Elías\" Durante una hambruna, Elías el Profeta pidió a una viuda de Sarepta que le diera lo único que le quedaba de comida. La viuda actuó con fe y Jehová le prometió grandes bendiciones. Al igual que la viuda, podemos seguir a los profetas de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/26-1-kings-12-22/221-1-kings-17?lang=spa"}, {"title": "Reyes 18: Escoger seguir al Señor Para demostrar que el Dios de Israel era el único Dios verdadero,", "description": "Reyes 18: Escoger seguir al Señor Para demostrar que el Dios de Israel era el único Dios verdadero, Elías el Profeta desafió a los sacerdotes de Baal a una competencia. Conforme acudes a Dios, Él puede ayudarte a superar cualquier obstáculo que pueda impedirte seguirlo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/26-1-kings-12-22/222-1-kings-18?lang=spa"}, {"title": "Reyes 2-4: El Señor da poder y autoridad a Eliseo El relato de cuando el Señor concedió poder", "description": "Reyes 2-4: El Señor da poder y autoridad a Eliseo El relato de cuando el Señor concedió poder y autoridad al profeta Eliseo después de la ascensión de Elías el Profeta al cielo ilustra la manera en que Él otorga poder y autoriza a aquellos a quienes llama a servir.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/27-2-kings-2-7/223-2-kings-2-4?lang=spa"}, {"title": "Reyes 5: Cosas pequeñas y sencillas Jehová invitó a Naamán, un capitán sirio, a hacer una cosa", "description": "Reyes 5: Cosas pequeñas y sencillas Jehová invitó a Naamán, un capitán sirio, a hacer una cosa pequeña para ser sanado. Pero Naamán esperaba algo más grandioso. Esta lección puede ayudarte a desear hacer cosas pequeñas y sencillas para seguir al Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/27-2-kings-2-7/224-2-kings-5?lang=spa"}, {"title": "Reyes 6: \"Los que están con nosotros\"", "description": "Reyes 6: \"Los que están con nosotros\" Cuando se vieron rodeados por el ejército sirio, el criado del profeta Eliseo exclamó atemorizado. Esta lección puede ayudarte a tener mayor confianza en el cuidado constante y protector del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/27-2-kings-2-7/225-2-kings-6?lang=spa"}, {"title": "Reyes 18-19: Poner la esperanza en Jehová Dios de Israel Después de que los asirios conquistaron", "description": "Reyes 18-19: Poner la esperanza en Jehová Dios de Israel Después de que los asirios conquistaron Samaria, comenzaron a atacar Judá. El rey Ezequías y su pueblo acudieron a Jehová en busca de fortaleza y protección.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/28-2-kings-16-25/281-2-kings-18-19?lang=spa"}, {"title": "Reyes 21-23: El rey Josías y el libro de la ley Cuando el reino de Judá se apartó de Dios,", "description": "Reyes 21-23: El rey Josías y el libro de la ley Cuando el reino de Judá se apartó de Dios, el libro sagrado de la ley se descuidó y finalmente se perdió. Una vez hallado, desempeñó un papel fundamental en conducir tanto al rey Josías como a sus súbditos de regreso a Jehová.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/28-2-kings-16-25/282-2-kings-21-23?lang=spa"}, {"title": "Reyes 17; 24-25: El esparcimiento de Israel Esta lección puede ayudarte a utilizar el esparcimiento", "description": "Reyes 17; 24-25: El esparcimiento de Israel Esta lección puede ayudarte a utilizar el esparcimiento de Israel para descubrir atributos del Padre Celestial y de Jesucristo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/28-2-kings-16-25/283-2-kings-17-25?lang=spa"}, {"title": "Práctica 6 del Dominio de la doctrina: Comprender los pasajes del Dominio de la doctrina y", "description": "Práctica 6 del Dominio de la doctrina: Comprender los pasajes del Dominio de la doctrina y poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a comprender los pasajes del Dominio de la doctrina. También ayuda a poner en práctica los principios concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/28-2-kings-16-25/284-doctrinal-mastery-6?lang=spa"}, {"title": "Crónicas 14-16: \"Si le buscáis, vosotros le hallaréis\"", "description": "Crónicas 14-16: \"Si le buscáis, vosotros le hallaréis\" Asa, rey de Judá, destacó la importancia de buscar a Dios cuando los tiempos se ponen difíciles, e incluso cuando están en calma. Esta lección puede ayudarte a elaborar un plan para buscar al Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/29-2-kings-14-30/291-2-chronicles-14-16?lang=spa"}, {"title": "Crónicas 17-20: Encontrar principios en las Escrituras El pueblo del rey Josafat se había alejado", "description": "Crónicas 17-20: Encontrar principios en las Escrituras El pueblo del rey Josafat se había alejado de Dios y practicaba la adoración de ídolos. Josafat eligió seguir a Jehová y ayudó a su pueblo a hacer lo mismo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/29-2-kings-14-30/292-2-chronicles-17-20?lang=spa"}, {"title": "Esdras", "description": "Esdras: Prepararse para asistir a la Casa del Señor Los israelitas hallaron gozo después de años de preparación física y espiritual. Nosotros también podemos experimentar gozo al prepararnos para los acontecimientos importantes de la vida.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/30-2-kings-ezranehemiah/301-ezra?lang=spa"}, {"title": "Nehemías", "description": "Nehemías: \"Yo estoy ocupado en una gran obra y no puedo ir\" Dios inspiró a Nehemías a proteger a su pueblo al reconstruir los muros que rodeaban Jerusalén. El pueblo de Nehemías tuvo que vencer constantes amenazas y distracciones para llevar a cabo esa obra.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/30-2-kings-ezranehemiah/302-nehemiah?lang=spa"}, {"title": "Ester 1", "description": "Ester, Parte 1: \"Para esta hora\" El relato de Ester demuestra cómo la influencia de Dios la colocó en posición de llevar a cabo Su obra.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/31-esther/311-esther-1?lang=spa"}, {"title": "Ester 2", "description": "Ester, Parte 2: \"Si perezco, que perezca\" Ante la muerte, Ester demostró valor y confió en el Señor para salvar a su pueblo. Esta lección puede ayudarte a actuar con valor para hacer la voluntad del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/31-esther/312-esther-2?lang=spa"}, {"title": "Evalúa tu aprendizaje 6: 1 Reyes 17-Ester Esta lección puede ayudarte a reflexionar sobre las", "description": "Evalúa tu aprendizaje 6: 1 Reyes 17-Ester Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio reciente de 1 Reyes 17-Ester.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/31-esther/313-assessyour-learning-6?lang=spa"}, {"title": "Job 1:13", "description": "Job 1-3; 12-13: \"En él confiaré\" A pesar de sus dificultades, Job nunca perdió su confianza en Jesucristo. Esta lección puede ayudarte a desarrollar un deseo más fuerte de confiar en el Señor cuando enfrentes pruebas.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/32-job/321-job-1-13?lang=spa"}, {"title": "Job 14:19", "description": "Job 14; 19: \"Yo sé que mi Redentor vive\" Job sabía que, gracias a Jesucristo, resucitaremos y volveremos a ver a Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/32-job/322-job-14-19?lang=spa"}, {"title": "Job 21:42", "description": "Job 21-24; 38-40; 42: Ver las pruebas con una perspectiva eterna Job y sus amigos trataron de entender por qué él sufría, pero Dios no les dio una razón. En cambio, Dios ayudó a Job a ver sus pruebas de una manera más elevada y santa.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/32-job/323-job-21-42?lang=spa"}, {"title": "Introducción a Salmos, Parte 1: Profecías de Jesucristo en Salmos Al igual que muchos himnos", "description": "Introducción a Salmos, Parte 1: Profecías de Jesucristo en Salmos Al igual que muchos himnos de la actualidad, varios de los salmos enseñan y testifican de la vida y la misión del Salvador. Esta lección puede ayudarte a comprender mejor la vida y la misión de Jesucristo, tal como se profetiza en Salmos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/33-psalms-1-46/331-intro-to-pslams-1?lang=spa"}, {"title": "Introducción a Salmos, Parte 2: Adorar a Jehová y alabar Su santo nombre Muchos de los salmos", "description": "Introducción a Salmos, Parte 2: Adorar a Jehová y alabar Su santo nombre Muchos de los salmos son ejemplos poéticos de adoración al Padre y al Hijo en alabanzas, súplicas y oraciones. Esta lección puede ayudarte a expresar tus sentimientos de adoración al Padre Celestial y a Jesucristo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/33-psalms-1-46/332-intro-to-pslams-2?lang=spa"}, {"title": "Salmo 23", "description": "Salmo 23: \"Jehová es mi pastor\" En el Salmo 23, el rey David describió su relación con Jesucristo por medio de una serie de pasajes que representan el amor y el cuidado del Salvador. Esta lección puede ayudarte a sentir el carácter tierno y amoroso de Cristo mediante la visualización de pasajes de las Escrituras.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/33-psalms-1-46/333-psalm-23?lang=spa"}, {"title": "Salmo 24", "description": "Salmo 24: \"¿Quién subirá al monte de Jehová?\" En el Salmo 24, el rey David enseña la importancia de ser limpios y puros para entrar en la Casa del Señor. Esta lección puede ayudarte a prepararte para entrar en el templo y sentirte digno de volver a vivir con Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/33-psalms-1-46/334-psalm-24?lang=spa"}, {"title": "Salmo 51", "description": "Salmo 51: \"Límpiame de mi pecado\" David escribió un salmo en el que expresó su deseo de recibir el perdón por los pecados que había cometido. Demostró su deseo de arrepentirse sinceramente.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/34-psalms-49-86/341-psalm-51?lang=spa"}, {"title": "Salmo 61:86", "description": "Salmos 61-86: \"Escucha, oh Dios, mi oración\" Los salmos son como oraciones sinceras que nos muestran cómo acercarnos a Dios con fe. La oración es una herramienta poderosa que permite a cualquier persona pedir consuelo, fortaleza o guía a Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/34-psalms-49-86/342-psalm-61-86?lang=spa"}, {"title": "Práctica 7 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios", "description": "Práctica 7 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a memorizar las frases clave de los pasajes del Dominio de la doctrina. También puede ayudarte a poner en práctica los principios divinos concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/34-psalms-49-86/343-doctrinal-mastery-practice-7?lang=spa"}, {"title": "Salmo 119", "description": "Salmo 119: \"He amado tus mandamientos más que el oro\" El Salmo 119 expresa gratitud por la palabra de Dios y testifica de su poder. Esta lección puede ayudarte a elaborar un plan para estudiar la palabra de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/35-psalms-102-150/351-psalm-119?lang=spa"}, {"title": "Salmo 136", "description": "Salmo 136: \"Alabad a Jehová\" Nosotros creemos que Dios es nuestro Padre Celestial.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/35-psalms-102-150/352-psalm-136?lang=spa"}, {"title": "Introducción a Proverbios: \"Jehová da la sabiduría\"", "description": "Introducción a Proverbios: \"Jehová da la sabiduría\" Estudiar el libro de Proverbios puede ser como buscar el consejo de un amigo de confianza. Por medio de esta lección, puedes reconocer verdades que pueden ayudarte a seguir la senda del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/36-proverbs-ecclesiastes/361-intro-proverbs?lang=spa"}, {"title": "Proverbios 3", "description": "Proverbios 3: \"Confía en Jehová\" Esta lección puede ayudarte a poner tu confianza en el Padre Celestial y en Jesucristo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/36-proverbs-ecclesiastes/362-proverbs-3?lang=spa"}, {"title": "Eclesiastés", "description": "Eclesiastés: \"Dios traerá toda obra a juicio\" En Eclesiastés se nos recuerda que las cosas de este mundo son temporales. Esta lección puede servir para que entiendas cómo el mantener una perspectiva eterna puede ayudarte a tomar mejores decisiones.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/36-proverbs-ecclesiastes/363-ecclesiastes?lang=spa"}, {"title": "Evalúa tu aprendizaje 7: Job-Eclesiastés Esta lección puede ayudarte a reflexionar sobre las", "description": "Evalúa tu aprendizaje 7: Job-Eclesiastés Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio reciente del Antiguo Testamento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/36-proverbs-ecclesiastes/364-assess-your-learning-7?lang=spa"}, {"title": "Introducción a Isaías: \"Grandes son las palabras de Isaías\"", "description": "Introducción a Isaías: \"Grandes son las palabras de Isaías\" Esta lección puede ayudarte a aumentar tu deseo de aprender acerca de Jesucristo por medio del estudio de Isaías.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/37-isaiah-1-12/371-intro-to-isaiah?lang=spa"}, {"title": "Isaías 1", "description": "Isaías 1: \"Aunque vuestros pecados sean como la grana, como la nieve serán emblanquecidos\" Esta lección puede ayudarte a aumentar tu confianza en el deseo y la capacidad del Salvador de limpiarte de tus pecados.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/37-isaiah-1-12/372-isaiah-1?lang=spa"}, {"title": "Isaías 5", "description": "Isaías 5: \"¡Ay de los que a lo malo llaman bueno, y a lo bueno, malo!\" La advertencia del Señor a Israel de no llamar \"a lo malo bueno, y a lo bueno, malo\" (Isaías 5:20) sigue vigente. Esta lección puede ayudarte a discernir lo bueno de lo malo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/37-isaiah-1-12/373-isaiah-5?lang=spa"}, {"title": "Isaías 11:12", "description": "Isaías 11-12: \"Un estandarte a las naciones\" Valiéndose de las imágenes metafóricas de un árbol y un estandarte, Isaías profetizó acerca del recogimiento de Israel. Esta lección puede ayudarte a sentirte más motivado para compartir el Evangelio con los demás.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/37-isaiah-1-12/374-isaiah-11-12?lang=spa"}, {"title": "Isaías 25", "description": "Isaías 25: Esperar al Señor A lo largo del libro de Isaías, el Señor hizo hincapié en nuestra necesidad de buscar con paciencia bendiciones y respuestas de Él. Esta lección puede ayudarte a comprender la importancia de esperar las respuestas y las bendiciones del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/38-isaiah-13-35/381-isaiah-25?lang=spa"}, {"title": "Isaías 29", "description": "Isaías 29: \"Una obra maravillosa y un prodigio\" Isaías describió la restauración del Evangelio de Jesucristo, incluso la salida a la luz del Libro de Mormón.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/38-isaiah-13-35/382-isaiah-29?lang=spa"}, {"title": "Isaías 40:43", "description": "Isaías 40-43: Dios consuela a Su pueblo Dios le dijo al antiguo Israel: \"No temas, porque yo estoy contigo\" (Isaías 41:10). Esta lección puede ayudarte a sentir el consuelo de Dios.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/39-isaiah-40-49/391-isaiah-40-43?lang=spa"}, {"title": "Isaías 44:47", "description": "Isaías 44-47: \"Fuera de mí no hay Dios\" En la época de Isaías, algunos israelitas comenzaron a adorar a otros dioses. En respuesta, el Señor los amonestó con amor, pero con firmeza, contra la falsa adoración.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/39-isaiah-40-49/392-isaiah-44-47?lang=spa"}, {"title": "Isaías 49", "description": "Isaías 49: \"En las palmas de mis manos te tengo grabada\" Las palabras de Isaías nos pueden tranquilizar en los momentos difíciles. Esta lección puede ayudarte a sentir que el Padre Celestial y Jesucristo te aman y no te olvidarán.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/39-isaiah-40-49/393-isaiah-49?lang=spa"}, {"title": "Práctica 8 del Dominio de la doctrina: Poner en práctica las verdades de los pasajes del Dominio", "description": "Práctica 8 del Dominio de la doctrina: Poner en práctica las verdades de los pasajes del Dominio de la doctrina y los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a poner en práctica las verdades que se encuentran en los pasajes del Dominio de la doctrina y los principios divinos concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/39-isaiah-40-49/394-doctrinal-mastery-practice-8?lang=spa"}, {"title": "Isaías 51:52", "description": "Isaías 51-52: \"Oídme\" Por medio de Isaías, el Señor habló a Su pueblo del convenio tanto en la antigüedad como en la actualidad. Les hizo hermosas promesas si decidían oír Sus amorosas invitaciones.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/40-isaiah-50-57/401-isaiah-51-52?lang=spa"}, {"title": "Isaías 53", "description": "Isaías 53: Jesucristo llevó \"nuestras enfermedades y sufrió nuestros dolores\" Isaías enseñó que, mediante Su sacrificio expiatorio, Jesucristo sintió todo lo que podemos experimentar en la vida terrenal. Gracias a Su Expiación, Él puede ayudarnos en nuestro sufrimiento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/40-isaiah-50-57/402-isaiah-53?lang=spa"}, {"title": "Isaías 54", "description": "Isaías 54: \"Te recogeré con grandes misericordias\" Por medio del profeta Isaías, el Señor le recordó a Su pueblo del convenio, de entonces y de ahora, que Él los recogería con grandes misericordias y les daría paz.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/40-isaiah-50-57/403-isaiah-54?lang=spa"}, {"title": "Isaías 58:1–12", "description": "Isaías 58:1-12: El poder del ayuno y la oración Los israelitas tuvieron dificultades cuando sus esfuerzos por ayunar pasaron aparentemente desapercibidos. Por medio de Isaías, el Señor enseñó al pueblo acerca del ayuno y la importancia de nuestras intenciones.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/41-isaiah-58-66/411-isaiah-58-1-12?lang=spa"}, {"title": "Isaías 58:13–14", "description": "Isaías 58:13-14: \"Si [a] mi día santo [...] lo llamas delicia\" En Isaías aprendemos que, si honramos al Padre y al Hijo en Su santo día de reposo, ese día será una bendición para nosotros. Esta lección puede ayudarte a honrar al Señor en el día de reposo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/41-isaiah-58-66/412-isaiah-58-13-14?lang=spa"}, {"title": "Isaías 61", "description": "Isaías 61: La misión de Jesús, el Mesías Isaías enseñó acerca de la misión de Jesucristo en el plan del Padre Celestial para sanarnos, liberarnos, darnos consuelo y salvarnos. Esta lección puede ayudarte a aumentar tu confianza en la capacidad del Salvador para sanarte, liberarte y darte consuelo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/41-isaiah-58-66/413-isaiah-61?lang=spa"}, {"title": "Isaías 60:66", "description": "Isaías 60-66: El reinado milenario del Salvador El Salvador Jesucristo regresará a la tierra y reinará durante mil años, lo que marcará el comienzo de un tiempo de paz. Isaías profetizó sobre ese período, que se llama el Milenio.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/41-isaiah-58-66/414-isaiah-60-66?lang=spa"}, {"title": "Jeremías 1", "description": "Jeremías 1: \"Antes que te formase en el vientre, te conocí; y [...] te di por profeta\" En la vida preterrenal, el Padre Celestial dio responsabilidades divinas a Jeremías para que las llevara a cabo en la vida terrenal. Esta lección puede ayudarte a tener el deseo de cumplir con tu propósito divino.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/42-jeremiah-1-20/421-jeremiah-1?lang=spa"}, {"title": "Jeremías 2:3", "description": "Jeremías 2-3: \"Vuélvete [...] porque misericordioso soy yo, dice Jehová\" A pesar de la iniquidad del pueblo del Señor en los tiempos de Jeremías, él fue enviado a enseñar que Dios aún los invitaba a volverse a Él y ser sanados.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/42-jeremiah-1-20/422-jeremiah-2-3?lang=spa"}, {"title": "Jeremías 16", "description": "Jeremías 16: \"Los haré volver\" El recogimiento de Israel es tan importante que el Salvador inspiró a los profetas de la antigüedad, como Jeremías, a profetizar sobre él hace miles de años.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/42-jeremiah-1-20/423-jeremiah-16?lang=spa"}, {"title": "Evalúa tu aprendizaje 8: Isaías-Jeremías 20 Esta lección puede ayudarte a reflexionar sobre", "description": "Evalúa tu aprendizaje 8: Isaías-Jeremías 20 Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio reciente del Antiguo Testamento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/42-jeremiah-1-20/424-assess-your-learning-8?lang=spa"}, {"title": "Jeremías 31", "description": "Jeremías 31: Él escribirá Su ley en nuestros corazones Jeremías 31 nos promete que, si nos volvemos al Señor, Él escribirá Su ley en nuestros corazones. Esta lección puede ayudarte a comprender lo que significa tener el Evangelio del Salvador escrito en el corazón.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/43-jeremiah-lamentations/431-jeremiah-31?lang=spa"}, {"title": "Jeremías 36", "description": "Jeremías 36: La palabra de Dios Esta lección puede ayudarte a comprender cómo las palabras del Señor pueden volverte a Jesucristo para recibir el perdón de tus pecados.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/43-jeremiah-lamentations/432-jeremiah-36?lang=spa"}, {"title": "Lamentaciones", "description": "Lamentaciones 1; 3: \"Nunca terminan sus misericordias\" Los hijos de Israel experimentaron el perdón del Salvador una y otra vez. Esta lección puede ayudarte a sentir la compasión que el Salvador tiene por ti, incluso cuando pecas.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/43-jeremiah-lamentations/433-lamentations?lang=spa"}, {"title": "Práctica 9 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios", "description": "Práctica 9 del Dominio de la doctrina: Memorizar las frases clave y poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a memorizar las frases clave de los pasajes del Dominio de la doctrina. También puede ayudarte a poner en práctica los principios divinos concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/43-jeremiah-lamentations/434-doctrinal-mastery-practice-9?lang=spa"}, {"title": "Ezequiel 1:3–33", "description": "Ezequiel 1-3; 33: \"Te he puesto por atalaya\" El Señor llamó a Ezequiel a servir como atalaya para los israelitas mientras estaban cautivos en Babilonia. Esta lección puede ayudarte a sentir un mayor deseo de dar oído a las advertencias de los profetas del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/44-ezekiel/441-ezekiel-1-3-33?lang=spa"}, {"title": "Ezequiel 34", "description": "Ezequiel 34: \"Él será su pastor\" Ezequiel compara la manera en que un buen pastor cuida de su rebaño con la manera en que Jesucristo cuida de los hijos del Padre Celestial. Esta lección puede ayudarte a seguir el ejemplo del Salvador de buscar a los demás y cuidar de ellos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/44-ezekiel/442-ezekiel-34?lang=spa"}, {"title": "Ezequiel 37", "description": "Ezequiel 37: La Biblia y el Libro de Mormón testifican de Jesucristo Ezequiel vio el futuro, incluso cómo Dios ayudaría a la casa de Israel a regresar a Jesucristo en los últimos días. Esta lección puede ayudarte a comprender las maneras en que la Biblia y el Libro de Mormón trabajan juntos como testigos de Jesucristo y Su Evangelio.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/44-ezekiel/443-ezekiel-37?lang=spa"}, {"title": "Ezequiel 47", "description": "Ezequiel 47: Las bendiciones del templo Ezequiel vio en una visión un templo de los últimos días que se construirá en Jerusalén. Esta lección puede ayudarte a sentir un mayor deseo de adorar a Dios en el templo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/44-ezekiel/444-ezekiel-47?lang=spa"}, {"title": "Daniel 1", "description": "Daniel 1: \"Daniel se propuso [...] no contaminarse\" Como siervos en la corte del rey Nabucodonosor, Daniel y sus amigos recibieron instrucciones de quebrantar las leyes de salud reveladas por el Señor, pero ellos se mantuvieron firmes.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/45-daniel/451-daniel-1?lang=spa"}, {"title": "Daniel 2", "description": "Daniel 2: \"Un reino que no será jamás destruido\" El Señor le reveló a Daniel una visión de los últimos días en la que destacó el establecimiento de Su reino en la tierra.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/45-daniel/452-daniel-2?lang=spa"}, {"title": "Daniel 3", "description": "Daniel 3: \"Nuestro Dios [...] puede librarnos [...] Y si no\" Podemos esforzarnos por ser como Sadrac, Mesac y Abed-nego y confiar en el Señor, independientemente de cómo y cuándo Él decida bendecirnos.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/45-daniel/453-daniel-3?lang=spa"}, {"title": "Daniel 6", "description": "Daniel 6: Encontrar verdades del Evangelio en las Escrituras Un poderoso relato que ilustra muchas verdades del Evangelio es el de la fe de Daniel y su confianza en el Señor, incluso cuando estuvo en el foso de los leones.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/45-daniel/454-daniel-6?lang=spa"}, {"title": "Oseas", "description": "Oseas: El amor y la misericordia del Señor En el libro de Oseas, el Señor utilizó el matrimonio entre el profeta Oseas y su esposa infiel, Gomer, para enseñar a Israel acerca de Su inquebrantable amor por convenio por ellos y por ti.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/46-hosea-joel/461-hosea?lang=spa"}, {"title": "Joel", "description": "Joel: \"Derramaré mi Espíritu\" Jehová le promete a Joel: \"Derramaré mi Espíritu sobre toda carne\". Esta lección puede ayudarte a aumentar tu capacidad para recibir revelación personal del Señor por medio del Espíritu Santo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/46-hosea-joel/462-joel?lang=spa"}, {"title": "Evalúa tu aprendizaje 9: Jeremías-Joel Esta lección puede ayudarte a reflexionar sobre las", "description": "Evalúa tu aprendizaje 9: Jeremías-Joel Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio desde Jeremías hasta Joel.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/46-hosea-joel/463-assess-your-learning-9?lang=spa"}, {"title": "Amós 3:7", "description": "Amós 3; 7: El Señor revela la verdad por medio de Sus profetas Esta lección puede ayudarte a comprender que el Padre Celestial y Jesucristo revelan consejos y verdades por medio de Sus profetas.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/47-amos-jonah/471-amos-3-7?lang=spa"}, {"title": "Amós 8", "description": "Amós 8: Vencer el hambre espiritual Esta lección puede ayudarte a aumentar tu confianza en que el Padre Celestial y Jesucristo pueden satisfacer tu hambre espiritual mediante la restauración del Evangelio.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/47-amos-jonah/472-amos-8?lang=spa"}, {"title": "Jonás", "description": "Jonás: \"Tú eres Dios clemente y piadoso\" Esta lección puede ayudarte a sentir el amor y la misericordia del Señor por ti y por los demás.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/47-amos-jonah/473-jonah?lang=spa"}, {"title": "Miqueas", "description": "Miqueas: ¿Qué \"pide Jehová de ti\"? Jehová enseñó a Miqueas maneras de honrarlo. Esta lección puede ayudarte a elaborar un plan para honrar al Padre Celestial y a Jesucristo.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/48-micah-zephaniah/481-micah?lang=spa"}, {"title": "Habacuc", "description": "Habacuc: A la espera de respuestas a nuestras preguntas sinceras Al igual que Habacuc, podemos acudir al Señor con nuestras preguntas. Esta lección puede ayudarte a comprender cómo mantener tu fe en Jesucristo cuando tengas preguntas que parecen no recibir respuesta.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/48-micah-zephaniah/482-habakkuk?lang=spa"}, {"title": "Práctica 10 del Dominio de la doctrina: Poner en práctica los principios concernientes a la", "description": "Práctica 10 del Dominio de la doctrina: Poner en práctica los principios concernientes a la adquisición de conocimiento espiritual Esta lección puede ayudarte a compartir pasajes del Dominio de la doctrina que sean significativos en tu vida, y a aprender y poner en práctica los principios divinos concernientes a la adquisición de conocimiento espiritual.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/48-micah-zephaniah/483-doctrinal-mastery-practice-10?lang=spa"}, {"title": "Hageo", "description": "Hageo: \"Meditad bien sobre vuestros caminos\" Esta lección puede inspirarte a poner a Dios en primer lugar en tu vida.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/49-haggai-zechariah/491-haggai?lang=spa"}, {"title": "Zacarías 1:8", "description": "Zacarías 1-8: \"Volveos a mí\" El Salvador renovó Su invitación a volverse a Él por medio del profeta Zacarías. Esta lección puede ayudarte a comprender las maneras en que puedes volverte al Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/49-haggai-zechariah/492-zechariah-1-8?lang=spa"}, {"title": "Zacarías 10:14", "description": "Zacarías 10-14: \"El día de Jehová viene\" Zacarías profetizó acerca del tiempo en que el Salvador regresaría a la tierra y protegería a Su pueblo de las naciones reunidas para luchar contra ellos. Esta lección puede ayudarte a sentirte más seguro de que el Salvador estará contigo durante los acontecimientos que preceden a la Segunda Venida.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/49-haggai-zechariah/493-zechariah-10-14?lang=spa"}, {"title": "Malaquías 3", "description": "Malaquías 3: Pagar el diezmo abre las ventanas de los cielos Las palabras del Señor recibidas por medio del profeta Malaquías nos ayudan a saber cómo nos bendecirá por nuestra obediencia a Su ley. Esta lección puede ayudarte a sentir el deseo de obedecer la ley del diezmo del Señor.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/50-malachi/501-malachi-3?lang=spa"}, {"title": "Malaquías 4", "description": "Malaquías 4: El poder para sellar Malaquías profetizó que el Salvador restauraría las llaves para sellar a fin de unir a las familias por la eternidad. Esta lección puede ayudarte a volver el corazón hacia tus padres, antepasados y posteridad futura.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/50-malachi/502-malachi-4?lang=spa"}, {"title": "Evalúa tu aprendizaje 10: Amós-Malaquías Esta lección puede ayudarte a reflexionar sobre las", "description": "Evalúa tu aprendizaje 10: Amós-Malaquías Esta lección puede ayudarte a reflexionar sobre las metas que te has fijado y sobre el progreso que has logrado durante tu estudio reciente del Antiguo Testamento.", "url": "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-student-manual-2026/50-malachi/503-assess-your-learning-10?lang=spa"}];
+
+const STATE = {
+  loading: true,
+  authStatus: "checking", // checking | signed-out | not-authorized | ok
+  user: null,
+  classes: [],
+  progress: {},
+  allProgress: {},
+  profiles: [],
+  allowlist: [],
+  selectedClassId: null,
+  teacherTab: "clases", // clases | progreso | alumnos
+  editingClassId: null,
+  expandedStudent: null,
+  toast: ""
+};
+
+function escapeHtml(str){
+  return String(str == null ? "" : str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+function showToast(msg){
+  STATE.toast = msg;
+  render();
+  setTimeout(()=>{ STATE.toast=""; render(); }, 2200);
+}
+
+function isTeacherEmail(email){
+  return TEACHER_EMAILS.map(e => e.toLowerCase()).includes((email || "").toLowerCase());
+}
+
+/* ---------------- Firestore helpers ---------------- */
+async function getClasses(){
+  try{ const doc = await db.collection("app").doc("classes").get(); return doc.exists ? (doc.data().list || []) : []; }
+  catch(e){ console.error(e); return []; }
+}
+async function saveClasses(){
+  try{ await db.collection("app").doc("classes").set({ list: STATE.classes }); }
+  catch(e){ console.error(e); showToast("No se pudo guardar (revisá los permisos de Firestore)."); }
+}
+
+async function getOwnProgress(uid){
+  try{ const doc = await db.collection("progress").doc(uid).get(); return doc.exists ? (doc.data().data || {}) : {}; }
+  catch(e){ return {}; }
+}
+async function saveOwnProgress(){
+  try{ await db.collection("progress").doc(STATE.user.uid).set({ data: STATE.progress }); }
+  catch(e){ console.error(e); }
+}
+
+async function upsertProfile(fbUser, role){
+  try{
+    await db.collection("profiles").doc(fbUser.uid).set({
+      email: fbUser.email,
+      displayName: fbUser.displayName || fbUser.email,
+      role,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  }catch(e){ console.error(e); }
+}
+
+async function isEmailAllowlisted(email){
+  try{ const doc = await db.collection("allowlist").doc(email.toLowerCase()).get(); return doc.exists; }
+  catch(e){ return false; }
+}
+async function loadAllowlist(){
+  try{ const snap = await db.collection("allowlist").get(); STATE.allowlist = snap.docs.map(d => ({ email: d.id, ...d.data() })); }
+  catch(e){ STATE.allowlist = []; }
+}
+async function addAllowedEmail(form){
+  const email = form.email.value.trim().toLowerCase();
+  if(!email){ return; }
+  try{
+    await db.collection("allowlist").doc(email).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    form.reset();
+    await loadAllowlist();
+    showToast("Alumno autorizado.");
+    render();
+  }catch(e){ showToast("No se pudo agregar."); }
+}
+async function removeAllowedEmail(email){
+  try{ await db.collection("allowlist").doc(email).delete(); await loadAllowlist(); render(); }
+  catch(e){ showToast("No se pudo quitar."); }
+}
+
+async function loadStudentProfiles(){
+  try{
+    const snap = await db.collection("profiles").where("role", "==", "alumno").get();
+    STATE.profiles = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  }catch(e){ STATE.profiles = []; }
+}
+async function loadAllProgress(){
+  const result = {};
+  for(const p of STATE.profiles){
+    result[p.uid] = await getOwnProgress(p.uid);
+  }
+  STATE.allProgress = result;
+}
+
+/* ---------------- Auth ---------------- */
+function signInWithGoogle(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => {
+    console.error(err);
+    showToast("No se pudo iniciar sesión con Google.");
+  });
+}
+function logout(){ auth.signOut(); }
+
+auth.onAuthStateChanged(async (fbUser) => {
+  if(!fbUser){
+    STATE.user = null;
+    STATE.authStatus = "signed-out";
+    STATE.loading = false;
+    render();
+    return;
+  }
+  STATE.loading = true;
+  render();
+
+  let role = null;
+  if(isTeacherEmail(fbUser.email)) role = "profesor";
+  else if(await isEmailAllowlisted(fbUser.email)) role = "alumno";
+
+  if(!role){
+    STATE.user = { email: fbUser.email };
+    STATE.authStatus = "not-authorized";
+    STATE.loading = false;
+    render();
+    return;
+  }
+
+  await upsertProfile(fbUser, role);
+  STATE.user = { uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName || fbUser.email, role };
+  STATE.classes = await getClasses();
+  if(role === "alumno"){
+    STATE.progress = await getOwnProgress(fbUser.uid);
+    if(STATE.classes.length) STATE.selectedClassId = STATE.classes[0].id;
+  } else {
+    STATE.teacherTab = "clases";
+  }
+  STATE.authStatus = "ok";
+  STATE.loading = false;
+  render();
+});
+
+/* ---------------- Teacher: classes & activities ---------------- */
+async function addClass(form){
+  const title = form.title.value.trim();
+  const description = form.description.value.trim();
+  const videoUrl = form.videoUrl.value.trim();
+  const manualUrl = form.manualUrl.value.trim();
+  if(!title){ showToast("Ponle un título a la clase."); return; }
+  const newClass = { id: "c" + Date.now(), title, description, videoUrl, manualUrl, activities: [] };
+  STATE.classes.push(newClass);
+  await saveClasses();
+  form.reset();
+  STATE.selectedClassId = newClass.id;
+  showToast("Clase creada.");
+}
+
+async function deleteClass(classId){
+  if(!confirm("¿Eliminar esta clase y sus actividades?")) return;
+  STATE.classes = STATE.classes.filter(c => c.id !== classId);
+  await saveClasses();
+  if(STATE.selectedClassId === classId) STATE.selectedClassId = STATE.classes[0] ? STATE.classes[0].id : null;
+  render();
+}
+
+async function editClass(classId, form){
+  const cls = STATE.classes.find(c => c.id === classId);
+  if(!cls) return;
+  const title = form.title.value.trim();
+  if(!title){ showToast("Ponle un título a la clase."); return; }
+  cls.title = title;
+  cls.description = form.description.value.trim();
+  cls.videoUrl = form.videoUrl.value.trim();
+  cls.manualUrl = form.manualUrl.value.trim();
+  await saveClasses();
+  STATE.editingClassId = null;
+  showToast("Clase actualizada.");
+}
+
+async function importLessons(){
+  const msg = STATE.classes.length
+    ? `Esto agregará ${OT_LESSONS.length} lecciones a tu lista de clases actual. ¿Continuar?`
+    : `Se cargarán ${OT_LESSONS.length} lecciones del Antiguo Testamento como clases. Vas a poder editar títulos y agregar videos y actividades después. ¿Continuar?`;
+  if(!confirm(msg)) return;
+  const already = new Set(STATE.classes.map(c => c.id));
+  let added = 0;
+  OT_LESSONS.forEach((l, idx) => {
+    const id = "seed-" + idx;
+    if(already.has(id)) return;
+    STATE.classes.push({ id, title: l.title, description: l.description, videoUrl: "", manualUrl: l.url, activities: [] });
+    added++;
+  });
+  await saveClasses();
+  showToast(added ? `${added} lecciones importadas.` : "Esas lecciones ya estaban importadas.");
+}
+
+async function addActivity(classId, form){
+  const cls = STATE.classes.find(c => c.id === classId);
+  if(!cls) return;
+  const type = form.type.value;
+  const prompt = form.prompt.value.trim();
+  if(!prompt){ showToast("Escribe el enunciado de la actividad."); return; }
+
+  const activity = { id: "a" + Date.now(), type, prompt };
+
+  if(type === "quiz"){
+    const raw = [form.opt1.value, form.opt2.value, form.opt3.value, form.opt4.value];
+    const correctRaw = form.correct.value === "" ? -1 : parseInt(form.correct.value, 10);
+    const options = [];
+    const map = {};
+    raw.forEach((val, i) => {
+      const v = val.trim();
+      if(v !== ""){ map[i] = options.length; options.push(v); }
+    });
+    if(options.length < 2){ showToast("Agrega al menos dos opciones."); return; }
+    if(!(correctRaw in map)){ showToast("La respuesta correcta debe tener texto."); return; }
+    activity.options = options;
+    activity.correctIndex = map[correctRaw];
+  }
+
+  cls.activities.push(activity);
+  await saveClasses();
+  form.reset();
+  showToast("Actividad agregada.");
+}
+
+async function deleteActivity(classId, activityId){
+  const cls = STATE.classes.find(c => c.id === classId);
+  if(!cls) return;
+  cls.activities = cls.activities.filter(a => a.id !== activityId);
+  await saveClasses();
+  render();
+}
+
+/* ---------------- Student: progress ---------------- */
+async function toggleChecklist(classId, activityId){
+  STATE.progress[classId] = STATE.progress[classId] || {};
+  const current = STATE.progress[classId][activityId] || {};
+  STATE.progress[classId][activityId] = { ...current, done: !current.done };
+  await saveOwnProgress();
+  render();
+}
+
+async function answerQuiz(classId, activityId, selectedIndex){
+  const cls = STATE.classes.find(c => c.id === classId);
+  const act = cls.activities.find(a => a.id === activityId);
+  const correct = selectedIndex === act.correctIndex;
+  STATE.progress[classId] = STATE.progress[classId] || {};
+  STATE.progress[classId][activityId] = { done: true, answer: selectedIndex, correct };
+  await saveOwnProgress();
+  render();
+}
+
+async function submitReflection(classId, activityId, text){
+  const t = text.trim();
+  if(!t){ showToast("Escribe tu respuesta antes de guardar."); return; }
+  STATE.progress[classId] = STATE.progress[classId] || {};
+  STATE.progress[classId][activityId] = { done: true, answer: t };
+  await saveOwnProgress();
+  showToast("Respuesta guardada.");
+}
+
+function classCompletion(progressForUser, cls){
+  if(!cls.activities.length) return null;
+  const p = (progressForUser && progressForUser[cls.id]) || {};
+  const done = cls.activities.filter(a => p[a.id] && p[a.id].done).length;
+  return Math.round((done / cls.activities.length) * 100);
+}
+
+/* ---------------- Rendering ---------------- */
+function render(){
+  const app = document.getElementById("app");
+  if(STATE.loading){ app.innerHTML = '<div class="loading">Cargando el campus…</div>'; return; }
+  let body;
+  if(STATE.authStatus === "signed-out") body = renderLogin();
+  else if(STATE.authStatus === "not-authorized") body = renderNotAuthorized();
+  else body = renderShell();
+  app.innerHTML = body + (STATE.toast ? `<div class="toast">${escapeHtml(STATE.toast)}</div>` : "");
+}
+
+function renderLogin(){
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1 class="auth-title">Campus de Seminario</h1>
+      <p class="auth-sub">Clases, videos y actividades del curso, en un solo lugar.</p>
+      <button type="button" class="google-btn" data-action="google-login">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.3-5.1l-6.6-5.6C29.7 35.2 27 36 24 36c-5.3 0-9.7-3.1-11.3-7.5l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.6 5.6C39.9 37.4 44 31.4 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+        Continuar con Google
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderNotAuthorized(){
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1 class="auth-title">Cuenta no autorizada</h1>
+      <p class="not-auth-email">${escapeHtml(STATE.user.email)} no tiene acceso a este campus todavía.</p>
+      <p class="auth-sub">Pedile al profesor que te autorice, o probá con otra cuenta de Google.</p>
+      <button type="button" class="btn secondary" data-action="logout">Cerrar sesión</button>
+    </div>
+  </div>`;
+}
+
+function renderShell(){
+  const isTeacher = STATE.user.role === "profesor";
+  return `
+  <div class="topbar">
+    <div class="brand">Campus de Seminario</div>
+    <div class="who">
+      <span><span class="dot"></span><span class="name">${escapeHtml(STATE.user.displayName)}</span> · ${isTeacher ? "Profesor" : "Alumno"}</span>
+      <button class="link-btn" data-action="logout" style="color:var(--ink-soft)">Cerrar sesión</button>
+    </div>
+  </div>
+  <div class="layout">
+    ${isTeacher ? renderTeacherSidebar() : renderStudentSidebar()}
+    <div class="main">${isTeacher ? renderTeacherMain() : renderStudentMain()}</div>
+  </div>`;
+}
+
+/* ---- Student sidebar / main ---- */
+function renderStudentSidebar(){
+  if(!STATE.classes.length) return `<div class="sidebar"><p class="sidebar-heading">Todavía no hay clases publicadas.</p></div>`;
+  const items = STATE.classes.map((c, i) => {
+    const p = STATE.progress[c.id] || {};
+    const total = c.activities.length;
+    const done = c.activities.filter(a => p[a.id] && p[a.id].done).length;
+    const complete = total > 0 && done === total;
+    return `
+      <div class="class-item ${c.id === STATE.selectedClassId ? "active" : ""}" data-action="select-class" data-id="${c.id}">
+        <span class="mark">${complete ? "✓" : ""}</span>
+        <span>Clase ${i + 1}: ${escapeHtml(c.title)}</span>
+      </div>`;
+  }).join("");
+  return `<div class="sidebar"><p class="sidebar-heading">Índice del curso</p>${items}</div>`;
+}
+
+function renderStudentMain(){
+  const cls = STATE.classes.find(c => c.id === STATE.selectedClassId);
+  if(!cls) return `<p class="empty">Elige una clase del índice para comenzar.</p>`;
+  const idx = STATE.classes.findIndex(c => c.id === cls.id) + 1;
+  const p = STATE.progress[cls.id] || {};
+
+  let resourceHtml = "";
+  if(cls.videoUrl){
+    const yt = extractYoutubeId(cls.videoUrl);
+    resourceHtml += `<div class="resource">` +
+      (yt ? `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${yt}" allowfullscreen></iframe></div>`
+          : `<a class="manual-link" href="${escapeHtml(cls.videoUrl)}" target="_blank" rel="noopener">Ver video</a>`) +
+      `</div>`;
+  }
+  if(cls.manualUrl){
+    resourceHtml += `<div class="resource"><a class="manual-link" href="${escapeHtml(cls.manualUrl)}" target="_blank" rel="noopener">Abrir en el manual</a></div>`;
+  }
+
+  const activitiesHtml = cls.activities.length ? cls.activities.map(a => renderActivity(cls, a, p[a.id])).join("") :
+    `<p class="form-note">El profesor todavía no agregó actividades para esta clase.</p>`;
+
+  return `
+    <p class="class-meta">Clase ${idx} de ${STATE.classes.length}</p>
+    <h2 class="class-title">${escapeHtml(cls.title)}</h2>
+    ${cls.description ? `<p class="class-desc">${escapeHtml(cls.description)}</p>` : ""}
+    ${resourceHtml}
+    <h3 class="section-heading">Actividades del día</h3>
+    ${activitiesHtml}
+  `;
+}
+
+function renderActivity(cls, act, state){
+  state = state || {};
+  const typeLabel = act.type === "quiz" ? "Cuestionario" : act.type === "checklist" ? "Lectura" : "Reflexión";
+  let body = "";
+
+  if(act.type === "quiz"){
+    if(state.done){
+      const chosen = act.options[state.answer];
+      body = `<p>${escapeHtml(chosen)}</p>` +
+        (state.correct ? `<p class="feedback-ok">Correcto.</p>` : `<p class="feedback-bad">Incorrecto. La respuesta correcta era: ${escapeHtml(act.options[act.correctIndex])}</p>`);
+    } else {
+      body = act.options.map((opt, i) => `
+        <div class="option-row">
+          <input type="radio" name="quiz-${act.id}" id="quiz-${act.id}-${i}" data-action="answer-quiz" data-class="${cls.id}" data-activity="${act.id}" data-index="${i}">
+          <label for="quiz-${act.id}-${i}" style="margin:0;color:var(--ink);font-size:0.94rem;">${escapeHtml(opt)}</label>
+        </div>`).join("");
+    }
+  } else if(act.type === "checklist"){
+    body = `
+      <div class="checklist-row">
+        <button class="btn ${state.done ? "secondary" : "gold"} small" data-action="toggle-checklist" data-class="${cls.id}" data-activity="${act.id}">
+          ${state.done ? "Marcada como leída" : "Marcar como leída"}
+        </button>
+        ${state.done ? '<span class="feedback-ok">Completado</span>' : ""}
+      </div>`;
+  } else {
+    body = `
+      <form data-action="reflection" data-class="${cls.id}" data-activity="${act.id}">
+        <textarea name="answer" placeholder="Escribe tu respuesta...">${escapeHtml(state.answer || "")}</textarea>
+        <div class="form-actions"><button type="submit" class="btn small gold">Guardar respuesta</button></div>
+      </form>`;
+  }
+
+  return `
+    <div class="activity">
+      <p class="activity-type">${typeLabel}</p>
+      <p class="activity-prompt">${escapeHtml(act.prompt)}</p>
+      ${body}
+    </div>`;
+}
+
+/* ---- Teacher sidebar / main ---- */
+function renderTeacherSidebar(){
+  const items = STATE.classes.map((c, i) => `<div class="class-item" style="cursor:default;"><span>Clase ${i + 1}: ${escapeHtml(c.title)}</span></div>`).join("");
+  return `<div class="sidebar"><p class="sidebar-heading">Clases publicadas</p>${items || '<p class="sidebar-heading">Aún no hay clases.</p>'}</div>`;
+}
+
+function renderTeacherMain(){
+  const tabs = `
+    <div class="tabs-teacher">
+      <button class="tab-btn ${STATE.teacherTab === "clases" ? "active" : ""}" data-action="teacher-tab" data-tab="clases">Clases</button>
+      <button class="tab-btn ${STATE.teacherTab === "progreso" ? "active" : ""}" data-action="teacher-tab" data-tab="progreso">Progreso de alumnos</button>
+      <button class="tab-btn ${STATE.teacherTab === "alumnos" ? "active" : ""}" data-action="teacher-tab" data-tab="alumnos">Alumnos autorizados</button>
+    </div>`;
+  let content;
+  if(STATE.teacherTab === "clases") content = renderTeacherClasses();
+  else if(STATE.teacherTab === "progreso") content = renderTeacherProgress();
+  else content = renderTeacherAllowlist();
+  return tabs + content;
+}
+
+function renderTeacherClasses(){
+  const newClassForm = `
+    <div class="newclass-box">
+      <h3>Nueva clase</h3>
+      <form data-action="add-class">
+        <label>Título</label>
+        <input type="text" name="title" required>
+        <label>Descripción (opcional)</label>
+        <textarea name="description"></textarea>
+        <label>Video de YouTube (opcional)</label>
+        <input type="url" name="videoUrl" placeholder="https://www.youtube.com/watch?v=...">
+        <label>Enlace al manual (opcional)</label>
+        <input type="url" name="manualUrl" placeholder="https://...">
+        <div class="form-actions"><button type="submit" class="btn gold">Crear clase</button></div>
+      </form>
+    </div>
+    <div class="newclass-box">
+      <h3>Importar plan de estudio</h3>
+      <p class="form-note">Carga de una sola vez las ${OT_LESSONS.length} lecciones del Manual del alumno de Seminario 2026 (Antiguo Testamento), con su enlace al manual online ya incluido. Podés revisar y ajustar los títulos después.</p>
+      <div class="form-actions"><button type="button" class="btn secondary" data-action="import-lessons">Importar las ${OT_LESSONS.length} lecciones</button></div>
+    </div>`;
+
+  const classesHtml = STATE.classes.map((c, i) => {
+    if(STATE.editingClassId === c.id){
+      return `
+      <div style="border-top:1px solid var(--line); padding: 1.25rem 0;">
+        <p class="class-meta">Clase ${i + 1} — editando</p>
+        <form data-action="edit-class" data-class="${c.id}" style="max-width:560px;">
+          <label>Título</label>
+          <input type="text" name="title" value="${escapeHtml(c.title)}" required>
+          <label>Descripción (opcional)</label>
+          <textarea name="description">${escapeHtml(c.description || "")}</textarea>
+          <label>Video de YouTube (opcional)</label>
+          <input type="url" name="videoUrl" value="${escapeHtml(c.videoUrl || "")}">
+          <label>Enlace al manual (opcional)</label>
+          <input type="url" name="manualUrl" value="${escapeHtml(c.manualUrl || "")}">
+          <div class="form-actions">
+            <button type="submit" class="btn small gold">Guardar cambios</button>
+            <button type="button" class="btn small secondary" data-action="cancel-edit-class">Cancelar</button>
+          </div>
+        </form>
+      </div>`;
+    }
+    return `
+    <div style="border-top:1px solid var(--line); padding: 1.25rem 0;">
+      <p class="class-meta">Clase ${i + 1}
+        <button class="link-btn teacher-del" data-action="edit-class-toggle" data-id="${c.id}" style="color:var(--ink-soft);">Editar</button>
+        <button class="link-btn teacher-del" data-action="delete-class" data-id="${c.id}">Eliminar clase</button>
+      </p>
+      <h3 class="class-title" style="font-size:1.35rem;">${escapeHtml(c.title)}</h3>
+      ${c.description ? `<p class="class-desc">${escapeHtml(c.description)}</p>` : ""}
+      ${c.videoUrl ? `<p class="form-note">Video: ${escapeHtml(c.videoUrl)}</p>` : ""}
+      ${c.manualUrl ? `<p class="form-note">Manual: ${escapeHtml(c.manualUrl)}</p>` : ""}
+      <h4 style="font-family:var(--serif); font-weight:normal; margin: 1rem 0 0.4rem 0;">Actividades</h4>
+      ${c.activities.map(a => `
+        <div class="activity" style="padding:0.7rem 0;">
+          <p class="activity-type">${a.type === "quiz" ? "Cuestionario" : a.type === "checklist" ? "Lectura" : "Reflexión"}
+            <button class="link-btn teacher-del" data-action="delete-activity" data-class="${c.id}" data-activity="${a.id}">Eliminar</button>
+          </p>
+          <p class="activity-prompt">${escapeHtml(a.prompt)}</p>
+          ${a.options ? `<p class="form-note">Opciones: ${a.options.map(escapeHtml).join(" / ")} — Correcta: ${escapeHtml(a.options[a.correctIndex])}</p>` : ""}
+        </div>`).join("") || `<p class="form-note">Sin actividades todavía.</p>`}
+      <form data-action="add-activity" data-class="${c.id}" style="margin-top:1rem; max-width:480px;">
+        <label>Tipo de actividad</label>
+        <select name="type">
+          <option value="quiz">Cuestionario (opción múltiple)</option>
+          <option value="checklist">Lectura (marcar como completada)</option>
+          <option value="reflection">Reflexión (respuesta escrita)</option>
+        </select>
+        <label>Enunciado</label>
+        <textarea name="prompt" required></textarea>
+        <label>Opciones (solo para cuestionario)</label>
+        <input type="text" name="opt1" placeholder="Opción 1">
+        <div class="option-row"><input type="radio" name="correct" value="0"><span>Es correcta</span></div>
+        <input type="text" name="opt2" placeholder="Opción 2">
+        <div class="option-row"><input type="radio" name="correct" value="1"><span>Es correcta</span></div>
+        <input type="text" name="opt3" placeholder="Opción 3 (opcional)">
+        <div class="option-row"><input type="radio" name="correct" value="2"><span>Es correcta</span></div>
+        <input type="text" name="opt4" placeholder="Opción 4 (opcional)">
+        <div class="option-row"><input type="radio" name="correct" value="3"><span>Es correcta</span></div>
+        <div class="form-actions"><button type="submit" class="btn small gold">Agregar actividad</button></div>
+      </form>
+    </div>`;
+  }).join("");
+
+  return newClassForm + classesHtml;
+}
+
+function renderTeacherProgress(){
+  if(!STATE.profiles.length) return `<p class="empty" style="margin-top:1.5rem;">Todavía no hay alumnos que hayan ingresado.</p>`;
+  if(!STATE.classes.length) return `<p class="empty" style="margin-top:1.5rem;">Crea al menos una clase para ver el progreso.</p>`;
+
+  const rows = STATE.profiles.map((p) => {
+    const prog = STATE.allProgress[p.uid] || {};
+    const cells = STATE.classes.map(c => {
+      const pct = classCompletion(prog, c);
+      return `<td>${pct === null ? "—" : pct + "%"}</td>`;
+    }).join("");
+    return `
+      <tr>
+        <td><button class="student-name-btn" data-action="toggle-student" data-uid="${p.uid}">${escapeHtml(p.displayName || p.email)}</button></td>
+        ${cells}
+      </tr>
+      ${STATE.expandedStudent === p.uid ? renderStudentDetail(p, prog) : ""}
+    `;
+  }).join("");
+
+  const headerCells = STATE.classes.map((c, i) => `<th>Clase ${i + 1}</th>`).join("");
+
+  return `
+    <div style="margin-top:1.5rem; overflow-x:auto;">
+      <table class="progress-table">
+        <thead><tr><th>Alumno</th>${headerCells}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderStudentDetail(profile, prog){
+  const blocks = STATE.classes.map((c, i) => {
+    if(!c.activities.length) return "";
+    const lines = c.activities.map(a => {
+      const s = prog[c.id] && prog[c.id][a.id];
+      if(!s || !s.done) return `<p>${escapeHtml(a.prompt)} — sin completar</p>`;
+      if(a.type === "reflection") return `<p>${escapeHtml(a.prompt)} — "${escapeHtml(s.answer)}"</p>`;
+      if(a.type === "quiz") return `<p>${escapeHtml(a.prompt)} — ${s.correct ? "correcta" : "incorrecta"}</p>`;
+      return `<p>${escapeHtml(a.prompt)} — completada</p>`;
+    }).join("");
+    return `<h4>Clase ${i + 1}: ${escapeHtml(c.title)}</h4>${lines}`;
+  }).join("");
+  return `<tr><td colspan="99"><div class="student-detail">${blocks || "<p>Sin actividades registradas.</p>"}</div></td></tr>`;
+}
+
+function renderTeacherAllowlist(){
+  const teacherRows = TEACHER_EMAILS.map(e => `<div class="allow-row"><span>${escapeHtml(e)}</span><span class="form-note">Profesor</span></div>`).join("");
+  const allowRows = STATE.allowlist.map(a => `
+    <div class="allow-row">
+      <span>${escapeHtml(a.email)}</span>
+      <button class="link-btn" data-action="remove-allowed-email" data-email="${escapeHtml(a.email)}">Quitar</button>
+    </div>`).join("") || `<p class="form-note">Todavía no autorizaste a ningún alumno.</p>`;
+
+  return `
+    <div style="margin-top:1.5rem; max-width:480px;">
+      <h3 class="section-heading" style="margin-top:0;">Agregar alumno</h3>
+      <form data-action="add-allowed-email">
+        <label>Correo de Google del alumno</label>
+        <input type="email" name="email" placeholder="alumno@gmail.com" required>
+        <div class="form-actions"><button type="submit" class="btn small gold">Autorizar</button></div>
+      </form>
+
+      <h3 class="section-heading">Alumnos autorizados</h3>
+      ${allowRows}
+
+      <h3 class="section-heading">Profesores</h3>
+      <p class="form-note">Se definen en el código (constante TEACHER_EMAILS), no acá.</p>
+      ${teacherRows}
+    </div>`;
+}
+
+/* ---------------- Helpers ---------------- */
+function extractYoutubeId(url){
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+
+/* ---------------- Event delegation ---------------- */
+document.getElementById("app").addEventListener("click", async (e) => {
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  const action = el.dataset.action;
+
+  if(action === "google-login"){ signInWithGoogle(); }
+  else if(action === "logout"){ logout(); }
+  else if(action === "select-class"){ STATE.selectedClassId = el.dataset.id; render(); }
+  else if(action === "delete-class"){ await deleteClass(el.dataset.id); }
+  else if(action === "edit-class-toggle"){ STATE.editingClassId = el.dataset.id; render(); }
+  else if(action === "cancel-edit-class"){ STATE.editingClassId = null; render(); }
+  else if(action === "import-lessons"){ await importLessons(); }
+  else if(action === "delete-activity"){ await deleteActivity(el.dataset.class, el.dataset.activity); }
+  else if(action === "toggle-checklist"){ await toggleChecklist(el.dataset.class, el.dataset.activity); }
+  else if(action === "answer-quiz"){ await answerQuiz(el.dataset.class, el.dataset.activity, parseInt(el.dataset.index, 10)); }
+  else if(action === "remove-allowed-email"){ await removeAllowedEmail(el.dataset.email); }
+  else if(action === "teacher-tab"){
+    STATE.teacherTab = el.dataset.tab;
+    if(STATE.teacherTab === "progreso"){ await loadStudentProfiles(); await loadAllProgress(); }
+    else if(STATE.teacherTab === "alumnos"){ await loadAllowlist(); }
+    render();
+  }
+  else if(action === "toggle-student"){
+    const uid = el.dataset.uid;
+    STATE.expandedStudent = STATE.expandedStudent === uid ? null : uid;
+    render();
+  }
+});
+
+document.getElementById("app").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const action = form.dataset.action;
+
+  if(action === "add-class") await addClass(form);
+  else if(action === "edit-class") await editClass(form.dataset.class, form);
+  else if(action === "add-activity") await addActivity(form.dataset.class, form);
+  else if(action === "reflection") await submitReflection(form.dataset.class, form.dataset.activity, form.answer.value);
+  else if(action === "add-allowed-email") await addAllowedEmail(form);
+});
+
+render();
+</script>
+</body>
+</html>
