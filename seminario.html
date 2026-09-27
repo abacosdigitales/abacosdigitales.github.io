@@ -208,6 +208,16 @@
     border-radius: 3px; font-size: 0.85rem;
   }
 
+  .whatsapp-fab{
+    position: fixed; bottom: 22px; right: 22px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #25D366;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.28);
+    z-index: 40;
+  }
+  .whatsapp-fab:hover{ opacity: 0.92; }
+
   @media (max-width: 760px){
     .layout{ flex-direction: column; }
     .sidebar{ width: 100%; border-right: none; border-bottom: 1px solid var(--line); min-height:auto; }
@@ -596,6 +606,17 @@ function firstName(name){
   return (name || "").trim().split(/\s+/)[0] || "";
 }
 
+const WHATSAPP_TEACHER_NUMBER = "5491164221447";
+const WHATSAPP_DEFAULT_MESSAGE = "Hola! Tengo una consulta sobre Seminario";
+
+function renderWhatsappFab(){
+  const link = `https://wa.me/${WHATSAPP_TEACHER_NUMBER}?text=${encodeURIComponent(WHATSAPP_DEFAULT_MESSAGE)}`;
+  return `
+    <a class="whatsapp-fab" href="${link}" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp al Maestro">
+      <svg viewBox="0 0 32 32" width="28" height="28" fill="#fff"><path d="M16 2.9C8.8 2.9 2.9 8.8 2.9 16c0 2.4.6 4.7 1.8 6.7L3 29l6.5-1.7c1.9 1 4.1 1.6 6.5 1.6 7.2 0 13.1-5.9 13.1-13.1S23.2 2.9 16 2.9zm0 23.8c-2.1 0-4.1-.6-5.8-1.6l-.4-.2-3.9 1 1-3.8-.3-.4C5.6 20 5 18 5 16c0-6.1 5-11.1 11.1-11.1S27.1 9.9 27.1 16 22.1 26.7 16 26.7zm6-8.3c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.9-.8 2.1-1.5.3-.7.3-1.3.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
+    </a>`;
+}
+
 function renderShell(){
   const isTeacher = STATE.user.role === "profesor";
   return `
@@ -613,7 +634,8 @@ function renderShell(){
       <p class="greeting">Hola 👋 ${escapeHtml(firstName(STATE.user.displayName))}</p>
       ${isTeacher ? renderTeacherMain() : renderStudentMain()}
     </div>
-  </div>`;
+  </div>
+  ${isTeacher ? "" : renderWhatsappFab()}`;
 }
 
 /* ---- Student sidebar / main ---- */
