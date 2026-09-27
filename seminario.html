@@ -522,6 +522,18 @@ function classCompletion(progressForUser, cls){
   return Math.round((done / cls.activities.length) * 100);
 }
 
+function overallCompletion(progressForUser){
+  let total = 0, done = 0;
+  STATE.classes.forEach(c => {
+    if(!c.activities.length) return;
+    total += c.activities.length;
+    const p = (progressForUser && progressForUser[c.id]) || {};
+    done += c.activities.filter(a => p[a.id] && p[a.id].done).length;
+  });
+  if(total === 0) return null;
+  return Math.round((done / total) * 100);
+}
+
 /* ---------------- Rendering ---------------- */
 function render(){
   const app = document.getElementById("app");
@@ -776,8 +788,13 @@ function renderTeacherProgress(){
   if(!STATE.profiles.length) return `<p class="empty" style="margin-top:1.5rem;">Todavía no hay alumnos que hayan ingresado.</p>`;
   if(!STATE.classes.length) return `<p class="empty" style="margin-top:1.5rem;">Crea al menos una clase para ver el progreso.</p>`;
 
-  const rows = STATE.profiles.map((p) => {
+  const withOverall = STATE.profiles.map(p => {
     const prog = STATE.allProgress[p.uid] || {};
+    return { profile: p, prog, overall: overallCompletion(prog) };
+  });
+  withOverall.sort((a, b) => (a.overall === null ? -1 : a.overall) - (b.overall === null ? -1 : b.overall));
+
+  const rows = withOverall.map(({ profile: p, prog, overall }) => {
     const cells = STATE.classes.map(c => {
       const pct = classCompletion(prog, c);
       return `<td>${pct === null ? "—" : pct + "%"}</td>`;
@@ -785,6 +802,7 @@ function renderTeacherProgress(){
     return `
       <tr>
         <td><button class="student-name-btn" data-action="toggle-student" data-uid="${p.uid}">${escapeHtml(p.displayName || p.email)}</button></td>
+        <td><strong>${overall === null ? "—" : overall + "%"}</strong></td>
         ${cells}
       </tr>
       ${STATE.expandedStudent === p.uid ? renderStudentDetail(p, prog) : ""}
@@ -794,9 +812,10 @@ function renderTeacherProgress(){
   const headerCells = STATE.classes.map((c, i) => `<th>Clase ${i + 1}</th>`).join("");
 
   return `
-    <div style="margin-top:1.5rem; overflow-x:auto;">
+    <p class="form-note" style="margin-top:1.5rem;">Ordenado de menor a mayor avance total, para detectar rápido quién necesita un empujón.</p>
+    <div style="overflow-x:auto;">
       <table class="progress-table">
-        <thead><tr><th>Alumno</th>${headerCells}</tr></thead>
+        <thead><tr><th>Alumno</th><th>Avance total</th>${headerCells}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
