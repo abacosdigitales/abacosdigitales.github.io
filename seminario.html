@@ -218,6 +218,18 @@
   }
   .whatsapp-fab:hover{ opacity: 0.92; }
 
+  .site-footer{
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: 1.5rem 1.25rem 5rem 1.25rem;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  .site-footer p{ margin: 0 0 0.6rem 0; }
+  .site-footer .footer-note{ max-width: 60ch; margin: 0 auto; font-size: 0.78rem; }
+
   @media (max-width: 760px){
     .layout{ flex-direction: column; }
     .sidebar{ width: 100%; border-right: none; border-bottom: 1px solid var(--line); min-height:auto; }
@@ -572,7 +584,16 @@ function render(){
   if(STATE.authStatus === "signed-out") body = renderLogin();
   else if(STATE.authStatus === "not-authorized") body = renderNotAuthorized();
   else body = renderShell();
-  app.innerHTML = body + (STATE.toast ? `<div class="toast">${escapeHtml(STATE.toast)}</div>` : "");
+  app.innerHTML = body + renderFooter() + (STATE.toast ? `<div class="toast">${escapeHtml(STATE.toast)}</div>` : "");
+}
+
+function renderFooter(){
+  return `
+  <footer class="site-footer">
+    <p>© ${new Date().getFullYear()} Campus de Seminario. Todos los derechos reservados.</p>
+    <p>Planificación y Diseño: Maribel Eliana Pizarro<br>Programación: Ariel Diego Diaz</p>
+    <p class="footer-note">Las lecciones y el manual pertenecen a La Iglesia de Jesucristo de los Santos de los Últimos Días. Este sitio es una herramienta de apoyo para las clases de Seminario.</p>
+  </footer>`;
 }
 
 function renderLogin(){
