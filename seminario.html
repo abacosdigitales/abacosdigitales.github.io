@@ -772,8 +772,17 @@ function renderActivity(cls, act, state){
 
 /* ---- Teacher sidebar / main ---- */
 function renderTeacherSidebar(){
+  if(!STATE.classes.length) return `<div class="sidebar"><p class="sidebar-heading">Clases publicadas</p><p class="sidebar-heading">Aún no hay clases.</p></div>`;
   const items = STATE.classes.map((c, i) => `<div class="class-item" style="cursor:default;"><span>Clase ${i + 1}: ${escapeHtml(c.title)}</span></div>`).join("");
-  return `<div class="sidebar"><p class="sidebar-heading">Clases publicadas</p>${items || '<p class="sidebar-heading">Aún no hay clases.</p>'}</div>`;
+  const options = STATE.classes.map((c, i) => `<option value="${c.id}">Clase ${i + 1}: ${escapeHtml(c.title)}</option>`).join("");
+  return `<div class="sidebar">
+    <p class="sidebar-heading">Clases publicadas</p>
+    <select class="mobile-class-select" data-action="scroll-to-class">
+      <option value="">Ir a una clase…</option>
+      ${options}
+    </select>
+    <div class="desktop-class-list">${items}</div>
+  </div>`;
 }
 
 function renderTeacherMain(){
@@ -834,7 +843,7 @@ function renderTeacherClasses(){
       </div>`;
     }
     return `
-    <div style="border-top:1px solid var(--line); padding: 1.25rem 0;">
+    <div id="class-block-${c.id}" style="border-top:1px solid var(--line); padding: 1.25rem 0;">
       <p class="class-meta">Clase ${i + 1}
         <button class="link-btn teacher-del" data-action="edit-class-toggle" data-id="${c.id}" style="color:var(--ink-soft);">Editar</button>
         <button class="link-btn teacher-del" data-action="delete-class" data-id="${c.id}">Eliminar clase</button>
@@ -996,6 +1005,14 @@ document.getElementById("app").addEventListener("change", (e) => {
   if(e.target.dataset && e.target.dataset.action === "select-class-dropdown"){
     STATE.selectedClassId = e.target.value;
     render();
+  } else if(e.target.dataset && e.target.dataset.action === "scroll-to-class"){
+    const id = e.target.value;
+    if(!id) return;
+    if(STATE.teacherTab !== "clases"){ STATE.teacherTab = "clases"; render(); }
+    setTimeout(() => {
+      const el = document.getElementById("class-block-" + id);
+      if(el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
   }
 });
 
