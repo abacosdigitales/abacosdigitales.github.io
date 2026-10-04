@@ -1,35 +1,26 @@
-# TechFix Pro — Sistema de Gestión
+HERRAMIENTAS DE PRECIOS - TRINIDAD COMPUTERS (carpeta PRIVADA: no la subas al sitio)
 
-## Archivos incluidos
+Que hace actualizar_precios.py
+  1) Lee los listados de tus proveedores (config.json -> fuentes) y toma el precio de contado/transferencia.
+  2) Actualiza costos.json (tus costos reales).
+  3) Calcula el precio de venta (costo + tu margen) y genera ../precios.json, que es lo unico que lee el sitio.
+     precios.json NO contiene tus costos ni tu margen.
 
-- `index.html` → **Sitio web público** (para clientes)
-- `admin.html` → **Panel de administración** (uso interno)
+Como usarlo cada semana
+  - Windows: doble clic en actualizar.bat   (necesita Python 3 instalado)
+  - Mac/Linux: python3 actualizar_precios.py
+  - Despues subi (publica) solo el archivo precios.json al sitio.
 
-## Cómo usar
+Opciones
+  python actualizar_precios.py --dry            muestra los cambios sin guardar nada
+  python actualizar_precios.py --sin-red        no consulta internet; solo recalcula precios.json
+                                                (usalo despues de cambiar el margen, armado o envio en config.json)
+  python actualizar_precios.py --aceptar-todo   acepta tambien variaciones mayores al limite (por defecto 35%)
 
-1. Abrí `index.html` en el navegador → es el sitio que ven los clientes
-2. Abrí `admin.html` → es tu panel de gestión interno
+Seguridad: si un precio cambia mas del limite, queda RETENIDO (se mantiene el anterior) y aparece en el reporte
+para que lo revises. Los reportes se guardan en la carpeta reportes/.
 
-## Funciones del sitio web (index.html)
-- Página de presentación con servicios, proceso de atención y estadísticas
-- Formulario de solicitud de servicio online
-- Contrato de servicio completo (10 artículos) con opción de aceptar
-- Los datos se guardan automáticamente y aparecen en el panel admin
-
-## Funciones del panel admin (admin.html)
-- Dashboard con métricas en tiempo real
-- Gestión completa de Órdenes de Trabajo (crear, editar, ver, eliminar)
-- Bandeja de solicitudes web recibidas → convertir en OT con un clic
-- Listado automático de clientes con historial
-- Exportar todas las OT a CSV (compatible con Excel)
-
-## Personalización rápida
-- Cambiá "TechFix Pro" por el nombre de tu taller en ambos archivos
-- Modificá los precios en la sección de servicios del index.html
-- Ajustá el contrato con tus datos de contacto y condiciones específicas
-
-## Nota sobre los datos
-Los datos se guardan en el **localStorage del navegador** (almacenamiento local).
-Esto significa que persisten aunque cierres el navegador, pero son específicos
-de ese dispositivo/navegador. Para un sistema multiusuario o con base de datos
-real, se requeriría un backend (servidor).
+Importante
+  - Si un producto no se encuentra, se mantiene el ultimo costo y aparece como SIN ACTUALIZAR.
+  - Si el proveedor cambia el diseno de su pagina, el lector puede dejar de encontrar precios: corre con --dry y avisame.
+  - Para agregar otro proveedor, hay que agregar su lector en el script (hoy solo esta Hard Rosario).
