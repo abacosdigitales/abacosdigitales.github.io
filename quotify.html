@@ -101,9 +101,13 @@
 
   .layout{
     display:grid;
-    grid-template-columns:minmax(320px,420px) 1fr;
+    grid-template-columns:1fr minmax(320px,420px);
     gap:22px;
     align-items:start;
+  }
+  @media (min-width:981px){
+    .layout .preview-wrap{order:1;}
+    .layout .form-panel{order:2;}
   }
   @media (max-width:980px){
     .layout{grid-template-columns:1fr;}
@@ -180,7 +184,13 @@
   }
   .file-btn input{display:none;}
 
-  .items-editor{display:flex;flex-direction:column;gap:10px;}
+  .items-editor{
+    display:flex;flex-direction:column;gap:10px;
+    max-height:min(52vh,480px);overflow-y:auto;padding-right:6px;
+    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.25) transparent;
+  }
+  .items-editor::-webkit-scrollbar{width:6px;}
+  .items-editor::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.25);border-radius:6px;}
   .item-row{
     background:rgba(255,255,255,0.04);
     border:1px solid rgba(255,255,255,0.08);
@@ -380,6 +390,27 @@
   }
   .login-sub{color:#b9c2d6;font-size:12.5px;line-height:1.5;margin:0 0 22px;}
   .login-screen label{text-align:left;}
+  .forgot-password-link{
+    background:none;border:none;color:#93a0b8;font-family:'Inter',sans-serif;font-size:12.5px;
+    cursor:pointer;margin-top:12px;text-decoration:underline;padding:4px;
+  }
+  .forgot-password-link:hover{color:#dfe4ee;}
+  .item-row{gap:6px;padding:10px 10px 8px;}
+  .item-row .r2 label{font-size:10px;margin-bottom:2px;}
+  .item-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+  .item-margin-text{font-size:11px;}
+  .item-margin-text.profit{color:#7fd9a0;}
+  .item-margin-text.loss{color:#e79a9a;}
+  .item-actions{display:flex;gap:4px;}
+  .link-btn{
+    background:none;border:none;color:#9fb4d6;font-family:'Inter',sans-serif;font-size:11px;
+    cursor:pointer;padding:2px 4px;text-decoration:underline;
+  }
+  .link-btn:hover{color:#fff;}
+  .catalog-box{
+    margin-top:10px;border:1px dashed rgba(255,255,255,0.2);border-radius:10px;padding:10px 12px;
+  }
+  .catalog-box summary{cursor:pointer;font-size:13px;font-weight:600;color:#d6dbe6;}
   .login-error{
     color:#e79a9a;font-size:12.5px;text-align:left;margin:10px 0 0;
   }
@@ -400,6 +431,8 @@
       <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
       <p id="loginError" class="login-error" style="display:none;"></p>
       <button class="btn btn-primary" id="loginBtn" style="width:100%;justify-content:center;margin-top:14px;">Iniciar sesión</button>
+      <button type="button" id="forgotPasswordBtn" class="forgot-password-link">¿Olvidaste tu contraseña?</button>
+      <p id="resetMsg" class="login-error" style="display:none;color:#7fd9a0;"></p>
       <p class="hint" id="loginConfigHint">💡 Si sos el administrador y todavía no configuraste Firebase, mirá el comentario "CONFIGURA TU PROYECTO DE FIREBASE" en el código fuente. Las cuentas de acceso se crean manualmente en Firebase Console → Authentication → Users.</p>
     </div>
   </div>
@@ -457,7 +490,7 @@
             <input type="email" id="companyEmail" placeholder="hola@empresa.com">
           </div>
         </div>
-        <p class="hint" id="companyProfileStatus">Estos datos se guardan solos y se van a completar automáticamente la próxima vez que entres.</p>
+        <p class="hint" id="companyProfileStatus">Estos datos y tus valores habituales (CUIT, moneda, IVA, validez, condición de pago y notas) se guardan solos y se completan automáticamente cuando entres.</p>
       </div>
 
       <div class="field-group">
@@ -492,10 +525,14 @@
           </div>
         </div>
         <div style="height:10px;"></div>
-        <div class="grid2">
+        <div style="display:grid;grid-template-columns:1fr 78px 1fr;gap:10px;">
           <div>
             <label>Fecha</label>
             <input type="date" id="quoteDate">
+          </div>
+          <div>
+            <label>Días</label>
+            <input type="number" id="validDays" min="0" step="1" value="15">
           </div>
           <div>
             <label>Válida hasta</label>
@@ -509,6 +546,12 @@
         <div class="items-editor" id="itemsEditor"></div>
         <div style="height:10px;"></div>
         <button class="add-item-btn" id="addItemBtn">+ Agregar ítem</button>
+        <datalist id="catalogList"></datalist>
+        <details class="catalog-box" id="catalogBox">
+          <summary>Catálogo de ítems (<span id="catalogCount">0</span>)</summary>
+          <input type="text" id="catalogSearch" placeholder="Buscar en el catálogo…" autocomplete="off" style="margin:10px 0 8px;">
+          <div id="catalogItems" class="saved-list"></div>
+        </details>
       </div>
 
       <div class="field-group">
@@ -866,7 +909,7 @@ import {
   getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc,
   getDocs, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ============ CONFIGURA TU PROYECTO DE FIREBASE AQUÍ ============
 // 1. Creá un proyecto en https://console.firebase.google.com (podés llamarlo "Quotify")
@@ -894,8 +937,7 @@ function isConfigured(){
 
 (function(){
   let items = [
-    {desc:"Diseño y desarrollo de sitio web", detail:"Incluye diseño responsive y 5 secciones", qty:1, price:150000, cost:60000},
-    {desc:"Hosting anual", detail:"", qty:1, price:35000, cost:18000}
+    {desc:"", detail:"", qty:1, price:0, cost:0}
   ];
   let logoDataUrl = null;
   let activeDocType = "quote"; // "quote" | "receipt"
@@ -918,11 +960,17 @@ function isConfigured(){
     return (isFinite(n)?n:0).toLocaleString(locale, {minimumFractionDigits:2, maximumFractionDigits:2});
   }
 
-  function todayISO(){ return new Date().toISOString().slice(0,10); }
-  function addDaysISO(days){
-    const d = new Date();
-    d.setDate(d.getDate()+days);
-    return d.toISOString().slice(0,10);
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function dateToISO(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+  function todayISO(){ return dateToISO(new Date()); }
+  function addDaysTo(iso, days){
+    const d = new Date((iso || todayISO()) + "T12:00:00");
+    d.setDate(d.getDate() + (parseInt(days,10) || 0));
+    return dateToISO(d);
+  }
+  function addDaysISO(days){ return addDaysTo(todayISO(), days); }
+  function diffDays(a, b){
+    return Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00")) / 86400000);
   }
   function fmtDate(iso){
     if(!iso) return "—";
@@ -940,37 +988,95 @@ function isConfigured(){
     return {lineProfit, marginPct};
   }
 
+  const ITEM_FIELD_ORDER = ["desc","qty","price","cost"];
+
+  function marginInfo(item){
+    const {lineProfit, marginPct} = computeItemMargin(item);
+    return {text: `Margen: ${fmt(lineProfit)} (${marginPct.toFixed(1)}%)`, cls: lineProfit>=0 ? "profit":"loss"};
+  }
+  function updateMarginEl(i){
+    const el = $(`margin-${i}`);
+    if(!el || !items[i]) return;
+    const m = marginInfo(items[i]);
+    el.textContent = m.text;
+    el.className = "item-margin-text " + m.cls;
+  }
+  function itemInput(i, field){
+    return $("itemsEditor").querySelector(`[data-i="${i}"][data-field="${field}"]`);
+  }
+  function focusItemField(i, field){
+    const el = itemInput(i, field);
+    if(el){ el.focus(); if(el.select) el.select(); }
+  }
+  function addEmptyItem(){
+    items.push({desc:"", detail:"", qty:1, price:0, cost:0});
+    renderItemsEditor();
+    renderPreview();
+    focusItemField(items.length-1, "desc");
+  }
+  function goNextRow(i){
+    if(i+1 < items.length) focusItemField(i+1, "desc");
+    else addEmptyItem();
+  }
+
+  // Completa precio/costo/detalle desde el catálogo (solo si el ítem todavía no tiene precios)
+  function maybeAutofill(i){
+    const it = items[i];
+    if(!it) return;
+    const entry = findCatalogEntry(it.desc);
+    if(!entry || it.price || it.cost) return;
+    it.desc = entry.desc;
+    it.detail = entry.detail || "";
+    it.price = entry.price || 0;
+    it.cost = entry.cost || 0;
+    itemInput(i,"desc").value = it.desc;
+    const det = itemInput(i,"detail");
+    det.value = it.detail;
+    if(it.detail){
+      det.style.display = "";
+      const tg = $("itemsEditor").querySelector(`[data-detail="${i}"]`);
+      if(tg) tg.style.display = "none";
+    }
+    itemInput(i,"price").value = it.price;
+    itemInput(i,"cost").value = it.cost;
+    updateMarginEl(i);
+    renderPreview();
+  }
+
   function renderItemsEditor(){
     const wrap = $("itemsEditor");
     wrap.innerHTML = "";
     items.forEach((item, i)=>{
       const row = document.createElement("div");
       row.className = "item-row";
-      const cost = item.cost || 0;
-      const {lineProfit, marginPct} = computeItemMargin(item);
+      const m = marginInfo(item);
+      const hasDetail = !!(item.detail && String(item.detail).trim());
       row.innerHTML = `
         <div class="r1">
-          <input type="text" placeholder="Descripción del ítem" data-field="desc" data-i="${i}" value="${escapeAttr(item.desc)}">
-          <button class="btn-danger-mini" data-remove="${i}" title="Eliminar ítem">✕</button>
+          <input type="text" list="catalogList" autocomplete="off" placeholder="Descripción del ítem" data-field="desc" data-i="${i}" value="${escapeAttr(item.desc)}">
+          <button class="btn-danger-mini" data-remove="${i}" title="Eliminar ítem" type="button">✕</button>
         </div>
-        <input type="text" placeholder="Detalle adicional (opcional)" data-field="detail" data-i="${i}" value="${escapeAttr(item.detail||'')}" style="font-size:12px;">
         <div class="r2">
           <div>
-            <label style="margin-bottom:3px;">Cantidad</label>
+            <label>Cant.</label>
             <input type="number" min="0" step="1" data-field="qty" data-i="${i}" value="${item.qty}">
           </div>
           <div>
-            <label style="margin-bottom:3px;">Precio unitario</label>
+            <label>Precio unit.</label>
             <input type="number" min="0" step="0.01" data-field="price" data-i="${i}" value="${item.price}">
           </div>
           <div>
-            <label style="margin-bottom:3px;">Costo unitario</label>
-            <input type="number" min="0" step="0.01" data-field="cost" data-i="${i}" value="${cost}">
+            <label>Costo unit.</label>
+            <input type="number" min="0" step="0.01" data-field="cost" data-i="${i}" value="${item.cost || 0}">
           </div>
         </div>
-        <div class="item-margin ${lineProfit>=0?'profit':'loss'}" id="margin-${i}">
-          <span>Margen (privado)</span>
-          <span>${fmt(lineProfit)} (${marginPct.toFixed(1)}%)</span>
+        <input type="text" placeholder="Detalle adicional (opcional)" data-field="detail" data-i="${i}" value="${escapeAttr(item.detail||'')}" style="font-size:12px;${hasDetail?'':'display:none;'}">
+        <div class="item-foot">
+          <span class="item-margin-text ${m.cls}" id="margin-${i}">${m.text}</span>
+          <span class="item-actions">
+            <button type="button" class="link-btn" data-detail="${i}" style="${hasDetail?'display:none;':''}">+ detalle</button>
+            <button type="button" class="link-btn" data-catalog="${i}">Guardar en catálogo</button>
+          </span>
         </div>
       `;
       wrap.appendChild(row);
@@ -985,26 +1091,173 @@ function isConfigured(){
         } else {
           items[i][f] = e.target.value;
         }
-        if(f==="qty" || f==="price" || f==="cost"){
-          const marginEl = $(`margin-${i}`);
-          if(marginEl){
-            const {lineProfit, marginPct} = computeItemMargin(items[i]);
-            marginEl.className = "item-margin " + (lineProfit>=0 ? "profit":"loss");
-            marginEl.innerHTML = `<span>Margen (privado)</span><span>${fmt(lineProfit)} (${marginPct.toFixed(1)}%)</span>`;
-          }
-        }
+        if(f==="qty" || f==="price" || f==="cost") updateMarginEl(i);
+        // elegir una opción de la lista sugerida completa el resto al instante
+        if(f==="desc" && (e.inputType === undefined || e.inputType === "insertReplacementText")) maybeAutofill(i);
         renderPreview();
       });
+      inp.addEventListener("keydown", e=>{
+        if(e.key !== "Enter") return;
+        e.preventDefault();
+        const i = +e.target.dataset.i;
+        const f = e.target.dataset.field;
+        const idx = ITEM_FIELD_ORDER.indexOf(f);
+        if(f==="desc") maybeAutofill(i);
+        if(idx >= 0 && idx < ITEM_FIELD_ORDER.length-1) focusItemField(i, ITEM_FIELD_ORDER[idx+1]);
+        else goNextRow(i);
+      });
+      if(inp.dataset.field === "desc"){
+        inp.addEventListener("change", e=> maybeAutofill(+e.target.dataset.i));
+      }
     });
     wrap.querySelectorAll("[data-remove]").forEach(btn=>{
       btn.addEventListener("click", e=>{
-        const i = +e.target.dataset.remove;
+        const i = +e.currentTarget.dataset.remove;
         items.splice(i,1);
         renderItemsEditor();
         renderPreview();
       });
     });
+    wrap.querySelectorAll("[data-detail]").forEach(btn=>{
+      btn.addEventListener("click", e=>{
+        const i = +e.currentTarget.dataset.detail;
+        e.currentTarget.style.display = "none";
+        const det = itemInput(i,"detail");
+        det.style.display = "";
+        det.focus();
+      });
+    });
+    wrap.querySelectorAll("[data-catalog]").forEach(btn=>{
+      btn.addEventListener("click", async e=>{
+        const b = e.currentTarget;
+        const i = +b.dataset.catalog;
+        const original = b.textContent;
+        b.disabled = true;
+        b.textContent = "Guardando…";
+        const result = await saveItemToCatalog(i);
+        b.disabled = false;
+        b.textContent = result ? "Guardado ✓" : original;
+        if(result) setTimeout(()=>{ b.textContent = original; }, 1600);
+      });
+    });
   }
+
+  // ---------- CATÁLOGO DE ÍTEMS (se guarda en Firestore: settings/catalog) ----------
+  let catalog = [];
+  function norm(str){ return String(str||"").trim().toLowerCase(); }
+  function findCatalogEntry(desc){
+    const n = norm(desc);
+    if(!n) return null;
+    return catalog.find(c => norm(c.desc) === n) || null;
+  }
+  function catalogDocRef(){ return doc(db, "settings", "catalog"); }
+  async function persistCatalog(){
+    await setDoc(catalogDocRef(), {items: catalog, updatedAt: serverTimestamp()});
+  }
+
+  function renderCatalogUI(){
+    $("catalogList").innerHTML = catalog.map(c => `<option value="${escapeAttr(c.desc)}"></option>`).join("");
+    $("catalogCount").textContent = catalog.length;
+    const listEl = $("catalogItems");
+    if(!catalog.length){
+      listEl.innerHTML = `<p class="hint">Todavía no guardaste ítems. Tocá «Guardar en catálogo» en cualquier ítem para reutilizarlo después.</p>`;
+      return;
+    }
+    const q = norm($("catalogSearch").value);
+    const rows = catalog.map((c, idx)=>({c, idx}))
+      .filter(({c}) => !q || norm(c.desc).includes(q) || norm(c.detail).includes(q));
+    if(!rows.length){
+      listEl.innerHTML = `<p class="hint">Sin resultados para esa búsqueda.</p>`;
+      return;
+    }
+    listEl.innerHTML = "";
+    rows.forEach(({c, idx})=>{
+      const row = document.createElement("div");
+      row.className = "saved-item";
+      row.innerHTML = `
+        <div class="info">
+          <span class="num">${escapeHtml(c.desc)}</span>
+          <span class="sub">${fmt(c.price||0)}${c.detail ? " · "+escapeHtml(c.detail) : ""}</span>
+        </div>
+        <div class="actions">
+          <button type="button" class="mini-btn" data-cat-add="${idx}">Agregar</button>
+          <button type="button" class="mini-btn" data-cat-del="${idx}" style="color:var(--danger);">Borrar</button>
+        </div>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+
+  function addCatalogItemToQuote(idx){
+    const c = catalog[idx];
+    if(!c) return;
+    const last = items[items.length-1];
+    const reuse = last && !String(last.desc||"").trim() && !last.price && !last.cost;
+    const data = {desc:c.desc, detail:c.detail||"", price:c.price||0, cost:c.cost||0};
+    if(reuse){
+      Object.assign(last, data, {qty: last.qty || 1});
+    } else {
+      items.push({...data, qty:1});
+    }
+    renderItemsEditor();
+    renderPreview();
+    focusItemField(items.length-1, "qty");
+  }
+
+  async function saveItemToCatalog(i){
+    const it = items[i];
+    if(!it || !String(it.desc||"").trim()){
+      alert("Escribí la descripción del ítem antes de guardarlo en el catálogo.");
+      return false;
+    }
+    if(!firebaseReady){
+      alert("El catálogo se guarda en la nube y todavía no hay conexión con Firebase.");
+      return false;
+    }
+    const entry = {desc: it.desc.trim(), detail: String(it.detail||"").trim(), price: it.price||0, cost: it.cost||0};
+    const pos = catalog.findIndex(c => norm(c.desc) === norm(entry.desc));
+    if(pos >= 0) catalog[pos] = entry; else catalog.push(entry);
+    catalog.sort((a,b)=> a.desc.localeCompare(b.desc, "es"));
+    try{
+      await persistCatalog();
+    } catch(err){
+      console.error(err);
+      alert("No se pudo guardar el ítem en el catálogo. Revisá que las reglas de Firestore permitan la colección settings.");
+      await loadCatalog();
+      return false;
+    }
+    renderCatalogUI();
+    return true;
+  }
+
+  async function deleteCatalogItem(idx){
+    const c = catalog[idx];
+    if(!c) return;
+    if(!confirm(`¿Quitar «${c.desc}» del catálogo?`)) return;
+    catalog.splice(idx, 1);
+    try{ await persistCatalog(); } catch(err){ console.error(err); alert("No se pudo borrar del catálogo."); await loadCatalog(); return; }
+    renderCatalogUI();
+  }
+
+  async function loadCatalog(){
+    if(!firebaseReady) return;
+    try{
+      const snap = await getDoc(catalogDocRef());
+      catalog = (snap.exists() && Array.isArray(snap.data().items)) ? snap.data().items : [];
+    } catch(err){
+      console.error(err);
+      catalog = [];
+    }
+    renderCatalogUI();
+  }
+
+  $("catalogSearch").addEventListener("input", renderCatalogUI);
+  $("catalogItems").addEventListener("click", e=>{
+    const addBtn = e.target.closest("[data-cat-add]");
+    const delBtn = e.target.closest("[data-cat-del]");
+    if(addBtn) addCatalogItemToQuote(+addBtn.dataset.catAdd);
+    else if(delBtn) deleteCatalogItem(+delBtn.dataset.catDel);
+  });
 
   function escapeAttr(s){
     return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
@@ -1013,11 +1266,7 @@ function isConfigured(){
     return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
 
-  $("addItemBtn").addEventListener("click", ()=>{
-    items.push({desc:"", detail:"", qty:1, price:0, cost:0});
-    renderItemsEditor();
-    renderPreview();
-  });
+  $("addItemBtn").addEventListener("click", addEmptyItem);
 
   // ---------- LOGO ----------
   $("logoInput").addEventListener("change", (e)=>{
@@ -1237,6 +1486,20 @@ function isConfigured(){
     $(id).addEventListener("change", renderInvoice);
   });
 
+  // ---------- VALIDEZ DE LA COTIZACIÓN ----------
+  function recalcQuoteValid(render){
+    const base = $("quoteDate").value || todayISO();
+    $("quoteValid").value = addDaysTo(base, $("validDays").value);
+    if(render !== false) renderPreview();
+  }
+  function syncValidDaysFromDates(){
+    const a = $("quoteDate").value, b = $("quoteValid").value;
+    if(a && b) $("validDays").value = Math.max(0, diffDays(a, b));
+  }
+  $("quoteDate").addEventListener("change", ()=> recalcQuoteValid());
+  $("validDays").addEventListener("input", ()=> recalcQuoteValid());
+  $("quoteValid").addEventListener("change", ()=>{ syncValidDaysFromDates(); scheduleCompanyAutosave(); });
+
   // ---------- FIREBASE: PERFIL DE EMPRESA (reutilizable) ----------
   const COMPANY_DOC_PATH = ["settings", "company"];
   let companyProfileTimer = null;
@@ -1246,6 +1509,8 @@ function isConfigured(){
     return doc(db, COMPANY_DOC_PATH[0], COMPANY_DOC_PATH[1]);
   }
 
+  const PROFILE_TEXT_FIELDS = ["companyName","companyAddress","companyPhone","companyEmail","companyTaxId","paymentTerms","notes"];
+
   async function loadCompanyProfile(){
     if(!firebaseReady) return;
     try{
@@ -1253,21 +1518,26 @@ function isConfigured(){
       if(!snap.exists()) return;
       const d = snap.data();
       suppressCompanyAutosave = true;
-      if(d.companyName) $("companyName").value = d.companyName;
-      if(d.companyAddress) $("companyAddress").value = d.companyAddress;
-      if(d.companyPhone) $("companyPhone").value = d.companyPhone;
-      if(d.companyEmail) $("companyEmail").value = d.companyEmail;
+      PROFILE_TEXT_FIELDS.forEach(id=>{
+        if(typeof d[id] === "string") $(id).value = d[id];
+      });
+      if(d.currency && $("currency").querySelector(`option[value="${d.currency}"]`)) $("currency").value = d.currency;
+      if(typeof d.taxPct === "number") $("taxPct").value = d.taxPct;
+      if(typeof d.validDays === "number") $("validDays").value = d.validDays;
       if(d.logoDataUrl){
         logoDataUrl = d.logoDataUrl;
         $("logoPreview").src = logoDataUrl;
         $("logoPreview").style.display = "block";
       }
+      recalcQuoteValid(false);
+      renderItemsEditor();
       renderPreview();
       const statusEl = $("companyProfileStatus");
-      if(statusEl) statusEl.textContent = "Datos de tu empresa cargados automáticamente ✓";
-      suppressCompanyAutosave = false;
+      if(statusEl) statusEl.textContent = "Datos de tu empresa y valores habituales cargados automáticamente ✓";
     } catch(err){
       console.error(err);
+    } finally {
+      suppressCompanyAutosave = false;
     }
   }
 
@@ -1287,11 +1557,18 @@ function isConfigured(){
         companyAddress: $("companyAddress").value,
         companyPhone: $("companyPhone").value,
         companyEmail: $("companyEmail").value,
+        companyTaxId: $("companyTaxId").value,
+        paymentTerms: $("paymentTerms").value,
+        notes: $("notes").value,
+        currency: $("currency").value,
+        taxPct: parseFloat($("taxPct").value) || 0,
+        validDays: parseInt($("validDays").value, 10) || 0,
         logoDataUrl: logoDataUrl || "",
         updatedAt: serverTimestamp()
       }, {merge:true});
       const statusEl = $("companyProfileStatus");
-      if(statusEl) statusEl.textContent = "Datos de tu empresa guardados ✓ (se van a reutilizar la próxima vez)";
+      if(statusEl) statusEl.textContent = "Datos y valores habituales guardados ✓ (se completan solos la próxima vez)";
+      setCloudStatus("guardado","ok");
     } catch(err){
       console.error(err);
       const statusEl = $("companyProfileStatus");
@@ -1299,8 +1576,9 @@ function isConfigured(){
     }
   }
 
-  ["companyName","companyAddress","companyPhone","companyEmail"].forEach(id=>{
+  [...PROFILE_TEXT_FIELDS, "currency", "taxPct", "validDays"].forEach(id=>{
     $(id).addEventListener("input", scheduleCompanyAutosave);
+    $(id).addEventListener("change", scheduleCompanyAutosave);
   });
 
   // ---------- FIREBASE: GUARDADO ONLINE ----------
@@ -1433,6 +1711,7 @@ function isConfigured(){
       $("currency").value = d.currency || "ARS";
       $("quoteDate").value = d.quoteDate || "";
       $("quoteValid").value = d.quoteValid || "";
+      syncValidDaysFromDates();
       $("discountPct").value = d.discountPct || 0;
       $("taxPct").value = (d.taxPct != null) ? d.taxPct : 21;
       $("notes").value = d.notes || "";
@@ -1461,6 +1740,7 @@ function isConfigured(){
   function showLoginScreen(msg){
     $("loginScreen").style.display = "flex";
     $("appShell").style.display = "none";
+    $("resetMsg").style.display = "none";
     const errEl = $("loginError");
     if(msg){
       errEl.textContent = msg;
@@ -1493,6 +1773,7 @@ function isConfigured(){
         showAppShell();
         setCloudStatus("conectado","ok");
         await loadCompanyProfile();
+        await loadCatalog();
         await refreshSavedList();
       } else {
         firebaseReady = false;
@@ -1536,6 +1817,35 @@ function isConfigured(){
     }
   }
 
+  async function handleForgotPassword(){
+    if(!isConfigured()){
+      showLoginScreen("Firebase todavía no está configurado. Avisale al administrador de Quotify.");
+      return;
+    }
+    const email = $("loginEmail").value.trim();
+    if(!email){
+      showLoginScreen("Escribí tu email arriba y volvé a tocar «¿Olvidaste tu contraseña?».");
+      return;
+    }
+    const btn = $("forgotPasswordBtn");
+    btn.disabled = true;
+    try{
+      await sendPasswordResetEmail(auth, email);
+      showLoginScreen();
+      const ok = $("resetMsg");
+      ok.textContent = "Si ese email tiene una cuenta, te enviamos un link para crear una contraseña nueva. Revisá también la carpeta de spam.";
+      ok.style.display = "block";
+    } catch(err){
+      console.error(err);
+      let msg = "No se pudo enviar el email de recuperación. Probá de nuevo.";
+      if(err.code === "auth/invalid-email") msg = "El email no tiene un formato válido.";
+      else if(err.code === "auth/too-many-requests") msg = "Demasiados intentos. Esperá unos minutos y probá de nuevo.";
+      showLoginScreen(msg);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  $("forgotPasswordBtn").addEventListener("click", handleForgotPassword);
   $("loginBtn").addEventListener("click", handleLogin);
   [$("loginEmail"), $("loginPassword")].forEach(inp=>{
     inp.addEventListener("keydown", e=>{ if(e.key === "Enter") handleLogin(); });
@@ -1558,7 +1868,7 @@ function isConfigured(){
     const nextNum = (parseInt($("quoteNumber").value)||0) + 1;
     $("quoteNumber").value = String(nextNum).padStart(4,"0");
     $("quoteDate").value = todayISO();
-    $("quoteValid").value = addDaysISO(15);
+    recalcQuoteValid(false);
     $("discountPct").value = 0;
     $("amountReceived").value = 0;
     $("receiptDate").value = todayISO();
@@ -1663,7 +1973,7 @@ function isConfigured(){
 
   // init
   $("quoteDate").value = todayISO();
-  $("quoteValid").value = addDaysISO(15);
+  recalcQuoteValid(false);
   $("receiptDate").value = todayISO();
   $("invoiceDate").value = todayISO();
   $("invoiceDueDate").value = addDaysISO(30);
