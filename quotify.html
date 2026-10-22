@@ -235,6 +235,14 @@
   .profit-stat .value.loss{color:#e79a9a;}
 
   .hint{color:#93a0b8;font-size:12px;line-height:1.5;margin-top:6px;}
+  .panel-tools{display:flex;justify-content:flex-end;align-items:center;gap:4px;margin:-6px 0 8px;color:#6f7b92;font-size:11px;}
+  .field-group .section-title{cursor:pointer;user-select:none;}
+  .field-group .section-title:hover{color:#fff;}
+  .field-group .section-title .chev{margin-left:auto;font-size:12px;color:#93a0b8;transition:transform .15s ease;}
+  .field-group.collapsed .section-title .chev{transform:rotate(-90deg);}
+  .field-group.collapsed .section-body{display:none;}
+  .field-group.collapsed .section-title{margin-bottom:0;}
+  .field-group.collapsed{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.07);}
   .hint code{background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;}
   .saved-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:260px;overflow-y:auto;}
   .saved-item{
@@ -464,6 +472,11 @@
   <div class="layout">
     <!-- FORM -->
     <div class="panel form-panel show" id="formPanel">
+      <div class="panel-tools">
+        <button type="button" class="link-btn" id="expandAllBtn">Expandir todo</button>
+        <span>·</span>
+        <button type="button" class="link-btn" id="collapseAllBtn">Contraer todo</button>
+      </div>
 
       <div class="field-group">
         <div class="section-title"><span class="num">1</span>Tu empresa</div>
@@ -1952,8 +1965,8 @@ function isConfigured(){
     });
   }
   $("docTabQuote").addEventListener("click", ()=> switchDocType("quote"));
-  $("docTabReceipt").addEventListener("click", ()=> switchDocType("receipt"));
-  $("docTabInvoice").addEventListener("click", ()=> switchDocType("invoice"));
+  $("docTabReceipt").addEventListener("click", ()=>{ switchDocType("receipt"); openSection(7); });
+  $("docTabInvoice").addEventListener("click", ()=>{ switchDocType("invoice"); openSection(8); });
 
   // ---------- MOBILE TABS ----------
   const formPanel = $("formPanel");
@@ -1970,6 +1983,46 @@ function isConfigured(){
     formPanel.classList.remove("show");
     previewWrap.classList.remove("hide");
   });
+
+  // ---------- SECCIONES PLEGABLES DEL PANEL DE CARGA ----------
+  const sectionGroups = [];
+  function setSectionCollapsed(group, collapsed){
+    group.classList.toggle("collapsed", collapsed);
+    const t = group.querySelector(".section-title");
+    if(t) t.setAttribute("aria-expanded", String(!collapsed));
+  }
+  function openSection(num){
+    const g = sectionGroups.find(x => x.num === num);
+    if(g) setSectionCollapsed(g.group, false);
+  }
+  (function setupCollapsibleSections(){
+    // se abren por defecto las secciones de uso diario; empresa, recibo, factura, notas y guardadas quedan plegadas
+    const collapsedByDefault = [1, 7, 8, 9, 10];
+    $("formPanel").querySelectorAll(".field-group").forEach(group=>{
+      const title = group.querySelector(".section-title");
+      if(!title) return;
+      const body = document.createElement("div");
+      body.className = "section-body";
+      while(title.nextSibling) body.appendChild(title.nextSibling);
+      group.appendChild(body);
+      const chev = document.createElement("span");
+      chev.className = "chev";
+      chev.textContent = "▾";
+      title.appendChild(chev);
+      title.setAttribute("role","button");
+      title.tabIndex = 0;
+      const num = parseInt((title.querySelector(".num")||{}).textContent, 10);
+      sectionGroups.push({num, group});
+      setSectionCollapsed(group, collapsedByDefault.includes(num));
+      const toggle = ()=> setSectionCollapsed(group, !group.classList.contains("collapsed"));
+      title.addEventListener("click", toggle);
+      title.addEventListener("keydown", e=>{
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
+      });
+    });
+    $("expandAllBtn").addEventListener("click", ()=> sectionGroups.forEach(g=> setSectionCollapsed(g.group, false)));
+    $("collapseAllBtn").addEventListener("click", ()=> sectionGroups.forEach(g=> setSectionCollapsed(g.group, true)));
+  })();
 
   // init
   $("quoteDate").value = todayISO();
